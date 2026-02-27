@@ -28,9 +28,20 @@ export default function TeacherCard({ teacher, className }: TeacherCardProps) {
       )}
     >
       <div className="flex gap-4">
-        <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-full bg-gradient-to-br from-accent-100 to-accent-200/50 flex items-center justify-center text-xl sm:text-2xl font-bold text-accent-700">
-          {teacher.lastName.charAt(0)}
-          {teacher.firstName.charAt(0)}
+        <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-full bg-gradient-to-br from-accent-100 to-accent-200/50 flex items-center justify-center text-xl sm:text-2xl font-bold text-accent-700 overflow-hidden">
+          {teacher.avatar ? (
+            <img
+              src={teacher.avatar}
+              alt={fullName}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <>
+              {teacher.lastName.charAt(0)}
+              {teacher.firstName.charAt(0)}
+            </>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-accent-600">

@@ -12,6 +12,7 @@ const pathLabels: Record<string, string> = {
   'lich-hoc': 'Lịch học',
   'cau-hoi-thuong-gap': 'Câu hỏi thường gặp',
   'tin-tuc': 'Tin tức',
+  'bai-test': 'Bài kiểm tra',
 };
 
 interface BreadcrumbProps {

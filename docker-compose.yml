@@ -1,0 +1,19 @@
+# Chạy PostgreSQL cho Backend (Chinese Center)
+# Dùng: docker compose up -d
+# Dừng: docker compose down
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: chinese-center-db
+    environment:
+      POSTGRES_USER: chinese
+      POSTGRES_PASSWORD: chinese123
+      POSTGRES_DB: chinese_center
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

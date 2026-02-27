@@ -3,13 +3,28 @@ import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
 import SectionTitle from '@/components/ui/SectionTitle';
 import Button from '@/components/ui/Button';
+import { useSubmitLeadMutation } from '@/store/apiSlice';
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const [submitLead, { isLoading: submitting }] = useSubmitLeadMutation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSent(true);
+    setError('');
+    const form = e.currentTarget;
+    const name = (form.querySelector('[name="name"]') as HTMLInputElement)?.value?.trim();
+    const phone = (form.querySelector('[name="phone"]') as HTMLInputElement)?.value?.trim();
+    const email = (form.querySelector('[name="email"]') as HTMLInputElement)?.value?.trim();
+    const message = (form.querySelector('[name="message"]') as HTMLTextAreaElement)?.value?.trim();
+    if (!name || !phone || !email) return;
+    try {
+      await submitLead({ type: 'TU_VAN', name, email, phone, message }).unwrap();
+      setSent(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gửi thất bại. Vui lòng thử lại hoặc gọi hotline.');
+    }
   };
 
   return (
@@ -73,6 +88,9 @@ export default function ContactPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-5">
+                    {error && (
+                      <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+                    )}
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-primary-900">Họ tên *</label>
                       <input id="name" name="name" type="text" required className="mt-1 block w-full rounded-lg border border-primary-300 px-4 py-3 min-h-[44px] text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500" placeholder="Nguyễn Văn A" />
@@ -89,8 +107,8 @@ export default function ContactPage() {
                       <label htmlFor="message" className="block text-sm font-medium text-primary-900">Nội dung</label>
                       <textarea id="message" name="message" rows={4} className="mt-1 block w-full rounded-lg border border-primary-300 px-4 py-3 min-h-[44px] text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500" placeholder="Bạn muốn đăng ký khóa nào? Cần tư vấn gì?" />
                     </div>
-                    <Button type="submit" size="lg" className="w-full sm:w-auto group">
-                      Gửi tin nhắn
+                    <Button type="submit" size="lg" className="w-full sm:w-auto group" disabled={submitting}>
+                      {submitting ? 'Đang gửi...' : 'Gửi tin nhắn'}
                       <Send className="ml-2 h-5 w-5 inline-block group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </form>

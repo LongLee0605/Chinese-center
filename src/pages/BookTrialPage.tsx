@@ -5,6 +5,7 @@ import { Send } from 'lucide-react';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import SectionTitle from '@/components/ui/SectionTitle';
 import Button from '@/components/ui/Button';
+import { useSubmitLeadMutation } from '@/store/apiSlice';
 
 const COURSE_OPTIONS = [
   { value: 'hsk1', label: 'HSK 1 - Nhập môn' },
@@ -23,10 +24,35 @@ const TIME_OPTIONS = [
 
 export default function BookTrialPage() {
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const [submitLead, { isLoading: submitting }] = useSubmitLeadMutation();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSent(true);
+    setError('');
+    const form = e.currentTarget;
+    const name = (form.querySelector('[name="name"]') as HTMLInputElement)?.value?.trim();
+    const phone = (form.querySelector('[name="phone"]') as HTMLInputElement)?.value?.trim();
+    const email = (form.querySelector('[name="email"]') as HTMLInputElement)?.value?.trim();
+    const course = (form.querySelector('[name="course"]:checked') as HTMLInputElement)?.value;
+    const timeCheckboxes = form.querySelectorAll('[name="time"]:checked');
+    const timePreference = Array.from(timeCheckboxes).map((el) => (el as HTMLInputElement).value).join(', ');
+    const note = (form.querySelector('[name="note"]') as HTMLTextAreaElement)?.value?.trim();
+    if (!name || !phone || !email) return;
+    try {
+      await submitLead({
+        type: 'DANG_KY_HOC_THU',
+        name,
+        email,
+        phone,
+        courseInterest: course || undefined,
+        timePreference: timePreference || undefined,
+        note: note || undefined,
+      }).unwrap();
+      setSent(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gửi thất bại. Vui lòng thử lại hoặc gọi hotline.');
+    }
   };
 
   return (
@@ -58,6 +84,9 @@ export default function BookTrialPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+                {error && (
+                  <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+                )}
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-primary-900 mb-1.5">Họ tên *</label>
@@ -98,8 +127,8 @@ export default function BookTrialPage() {
                   <label htmlFor="note" className="block text-sm font-medium text-primary-900 mb-1.5">Ghi chú</label>
                   <textarea id="note" name="note" rows={3} className="w-full rounded-lg border border-primary-300 px-4 py-3 text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500" placeholder="Trình độ hiện tại, mục tiêu học..." />
                 </div>
-                <Button type="submit" size="lg" className="w-full sm:w-auto group">
-                  Gửi đăng ký
+                <Button type="submit" size="lg" className="w-full sm:w-auto group" disabled={submitting}>
+                  {submitting ? 'Đang gửi...' : 'Gửi đăng ký'}
                   <Send className="ml-2 h-5 w-5 inline-block group-hover:translate-x-1 transition-transform" />
                 </Button>
               </form>

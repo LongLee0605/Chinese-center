@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SearchModal from '@/components/search/SearchModal';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { openSearch, closeSearch } from '@/store/uiSlice';
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
@@ -23,7 +25,8 @@ const quickLinks = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const searchOpen = useAppSelector((s) => s.ui.searchOpen);
+  const dispatch = useAppDispatch();
   const location = useLocation();
 
   return (
@@ -58,7 +61,7 @@ export default function Navbar() {
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <button
                 type="button"
-                onClick={() => setSearchOpen(true)}
+                onClick={() => dispatch(openSearch())}
                 className="p-2.5 rounded-lg text-primary-600 hover:bg-primary-100 focus:outline-none focus:ring-2 focus:ring-accent-500 min-w-[44px] min-h-[44px] flex items-center justify-center lg:min-w-0 lg:min-h-0"
                 aria-label="Tìm kiếm khóa học"
               >
@@ -131,7 +134,7 @@ export default function Navbar() {
           </AnimatePresence>
         </nav>
       </header>
-      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchModal isOpen={searchOpen} onClose={() => dispatch(closeSearch())} />
     </>
   );
 }

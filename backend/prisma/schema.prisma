@@ -1,0 +1,252 @@
+// Chinese Center - Backend + CRM
+// PostgreSQL + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_VERIFICATION
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LessonType {
+  VIDEO
+  DOCUMENT
+  QUIZ
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
+}
+
+// Loại bài test: chỉ trắc nghiệm / chỉ tự luận / hỗn hợp
+enum QuizType {
+  MULTIPLE_CHOICE_ONLY  // Trắc nghiệm
+  ESSAY_ONLY            // Tự luận
+  MIXED                 // Hỗn hợp
+}
+
+// --------------- User & Auth ---------------
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String?
+  firstName     String
+  lastName      String
+  phone         String?
+  avatar        String?
+  role          UserRole @default(STUDENT)
+  status        UserStatus @default(PENDING_VERIFICATION)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  posts         Post[]
+  quizAttempts  QuizAttempt[]
+}
+
+// --------------- Blog (Bài viết) ---------------
+model Post {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?    @db.Text
+  body        String?    @db.Text
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  authorId    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([slug])
+  @@index([status])
+  @@index([authorId])
+  @@map("posts")
+}
+
+// --------------- Khóa học & Bài học ---------------
+model Course {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  nameZh      String?
+  description String?  @db.Text
+  level       String
+  duration    Int
+  maxStudents Int      @default(20)
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("VND")
+  status      String   @default("DRAFT")
+  slug        String   @unique
+  thumbnail   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lessons Lesson[]
+  quizzes Quiz[]
+}
+
+model Lesson {
+  id              String     @id @default(cuid())
+  courseId        String
+  title           String
+  slug            String
+  orderIndex      Int        @default(0)
+  content         String?    @db.Text
+  durationMinutes Int?
+  type            LessonType @default(DOCUMENT)
+  videoUrl        String?
+  isPublished     Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quizzes Quiz[]
+
+  @@unique([courseId, slug])
+  @@index([courseId])
+  @@map("lessons")
+}
+
+// --------------- Bài test (Quiz) ---------------
+model Quiz {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  description      String?  @db.Text
+  quizType         QuizType @default(MIXED)
+  courseId         String?
+  lessonId         String?
+  timeLimitMinutes Int?
+  passingScore     Int      @default(60)
+  isPublished      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  course   Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  lesson   Lesson?  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  questions QuizQuestion[]
+  attempts QuizAttempt[]
+
+  @@index([slug])
+  @@index([courseId])
+  @@index([lessonId])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id           String       @id @default(cuid())
+  quizId       String
+  type         QuestionType
+  questionText String       @db.Text
+  options      Json?        // ["A", "B", "C", "D"] for MULTIPLE_CHOICE
+  correctAnswer String      @db.Text
+  orderIndex   Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id          String    @id @default(cuid())
+  userId      String?   // null khi học viên làm bài từ website (guest)
+  guestName   String?
+  guestEmail  String?
+  quizId      String
+  score       Int?     // điểm số (0-100), tự luận giáo viên chấm sau
+  answers     Json?    // { questionId: answer }
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  quiz Quiz  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([quizId])
+  @@map("quiz_attempts")
+}
+
+// --------------- Đội ngũ giáo viên (public trên web) ---------------
+model Teacher {
+  id               String   @id @default(cuid())
+  name             String
+  title            String?  // Chức danh: Giáo viên trưởng, GV bản ngữ...
+  bio              String?  @db.Text
+  avatarPath       String?  // Đường dẫn file: /uploads/teachers/xxx.jpg
+  specializations  String[] @default([]) // ["HSK", "Giao tiếp", "Thiếu nhi"]
+  yearsExperience  Int?
+  isPublic         Boolean  @default(true)
+  orderIndex       Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isPublic])
+  @@index([orderIndex])
+  @@map("teachers")
+}
+
+// --------------- Email đã gửi (CRM) ---------------
+model SentEmail {
+  id          String   @id @default(cuid())
+  toAddresses String   // Địa chỉ người nhận (nhiều cách nhau bởi dấu phẩy)
+  subject     String   @db.Text
+  text        String?  @db.Text
+  html        String?  @db.Text
+  sentAt      DateTime @default(now())
+
+  @@index([sentAt])
+  @@map("sent_emails")
+}
+
+// --------------- Lead (Tư vấn / Đăng ký học thử từ website) ---------------
+enum LeadType {
+  TU_VAN           // Liên hệ tư vấn (form Liên hệ)
+  DANG_KY_HOC_THU  // Đăng ký học thử (form Đăng ký học thử)
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  type            LeadType
+  name            String
+  email           String
+  phone           String
+  message         String?  @db.Text
+  courseInterest  String?  // Khóa quan tâm (cho đăng ký học thử)
+  timePreference  String?  @db.Text // Khung giờ (JSON hoặc text)
+  note            String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("leads")
+}

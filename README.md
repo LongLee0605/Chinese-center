@@ -1,7 +1,21 @@
-# Chinese Center – Website (Vite + React + Tailwind)
+# Chinese Center
 
-Giao diện website trung tâm tiếng Trung: React 18, Vite 5, TailwindCSS 3, Framer Motion.  
-Thiết kế hướng tới UX/UI chuyên nghiệp, dễ mở rộng cho CRM (bài kiểm tra, khóa học) sau này.
+Dự án gồm **3 phần chạy độc lập** (có thể phân tách FE & BE khi deploy):
+
+| Phần | Thư mục | Công nghệ | Mô tả |
+|------|---------|-----------|--------|
+| **API** | `backend/` | NestJS, Prisma, PostgreSQL | Backend: Auth, Bài viết, Khóa học, Bài học, Quiz, Leads, Mail, **Đội ngũ giáo viên** |
+| **Website** | Gốc repo (`/`) | Vite, React, Tailwind | Website công khai: trang chủ, khóa học, giáo viên, tin tức, liên hệ |
+| **CRM** | `crm/` | Vite, React | Quản trị: bài viết, khóa học, quiz, **giáo viên**, leads, mail |
+
+Chi tiết cấu trúc và cách deploy tách biệt: **[docs/STRUCTURE.md](docs/STRUCTURE.md)**.  
+Hướng dẫn chạy đầy đủ (DB, Backend, CRM): **[docs/HUONG-DAN-CHAY.md](docs/HUONG-DAN-CHAY.md)**.
+
+---
+
+## Website (Vite + React + Tailwind)
+
+Giao diện website trung tâm tiếng Trung: React 18, Vite 5, TailwindCSS 3, Framer Motion.
 
 ## Tech stack
 

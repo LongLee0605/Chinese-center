@@ -6,6 +6,8 @@ import TeachersPage from './pages/TeachersPage';
 import ContactPage from './pages/ContactPage';
 import AboutPage from './pages/AboutPage';
 import LevelTestPage from './pages/LevelTestPage';
+import QuizListPage from './pages/QuizListPage';
+import QuizTestPage from './pages/QuizTestPage';
 import BookTrialPage from './pages/BookTrialPage';
 import SchedulePage from './pages/SchedulePage';
 import FaqPage from './pages/FaqPage';
@@ -27,6 +29,8 @@ function App() {
         <Route path="/cau-hoi-thuong-gap" element={<FaqPage />} />
         <Route path="/tin-tuc" element={<BlogPage />} />
         <Route path="/tin-tuc/:slug" element={<BlogPostPage />} />
+        <Route path="/bai-test" element={<QuizListPage />} />
+        <Route path="/bai-test/:slug" element={<QuizTestPage />} />
       </Routes>
     </Layout>
   );

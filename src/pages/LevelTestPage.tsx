@@ -106,6 +106,11 @@ export default function LevelTestPage() {
                   <Link to="/dang-ky-hoc-thu">
                     <Button variant="outline" size="lg">Đăng ký học thử miễn phí</Button>
                   </Link>
+                  <Link to="/bai-test/kiem-tra-ki-nang-cua-ban-than">
+                    <Button variant="ghost" size="lg">
+                      Kiểm tra kỹ năng chi tiết
+                    </Button>
+                  </Link>
                 </div>
               </motion.div>
             )}
