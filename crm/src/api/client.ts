@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+// Ưu tiên env; nếu không có (prod chưa cấu hình đúng) thì fallback về BE Render
+const API_BASE =
+  import.meta.env.VITE_API_URL || 'https://chinese-center.onrender.com/api/v1';
 
 function getToken(): string | null {
   return localStorage.getItem('crm_token');
