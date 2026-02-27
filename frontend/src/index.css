@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-display: 'Inter', sans-serif;
+  /* Khoảng cách chuẩn */
+  --section-y: 4rem;      /* 64px mobile */
+  --section-y-lg: 5rem;   /* 80px tablet+ */
+  --container-x: 1rem;    /* 16px mobile */
+  --container-x-sm: 1.5rem;
+  --container-x-lg: 2rem;
+  --content-gap: 1.5rem;  /* 24px giữa nội dung */
+  --content-gap-lg: 2rem; /* 32px */
+  --card-padding: 1.5rem;
+  --card-padding-lg: 2rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply antialiased text-primary-900 bg-white font-sans;
+    overflow-x: hidden;
+  }
+  button,
+  a[role="button"],
+  [type="submit"],
+  [type="button"] {
+    @apply touch-manipulation;
+  }
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  /* Section: padding dọc đồng bộ */
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+    padding-top: var(--section-y);
+    padding-bottom: var(--section-y);
+  }
+  @media (min-width: 1024px) {
+    .section-padding {
+      padding-top: var(--section-y-lg);
+      padding-bottom: var(--section-y-lg);
+    }
+  }
+  /* Container */
+  .container-narrow {
+    @apply max-w-3xl mx-auto;
+  }
+  .container-wide {
+    @apply max-w-6xl mx-auto;
+  }
+  /* Khoảng cách giữa block trong section */
+  .section-inner-gap {
+    @apply gap-8 sm:gap-10 lg:gap-12;
+  }
+  .card-padding {
+    padding: var(--card-padding);
+  }
+  @media (min-width: 640px) {
+    .card-padding {
+      padding: var(--card-padding-lg);
+    }
+  }
+}
+
+::selection {
+  @apply bg-accent-400/30 text-primary-900;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-primary-100 rounded-full;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-primary-300 rounded-full hover:bg-primary-400;
+}
