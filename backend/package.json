@@ -7,7 +7,7 @@
     "build": "prisma generate && nest build",
     "start": "nest start",
     "dev": "nest start --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "nest start --prod",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
