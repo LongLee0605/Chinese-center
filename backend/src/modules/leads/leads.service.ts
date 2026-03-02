@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { leadNotificationToAdmin } from '../mail/templates/email-templates';
 import { CreateLeadDto } from './dto/create-lead.dto';
 
 const OWNER_EMAIL_KEY = 'LEAD_OWNER_EMAIL';
@@ -33,24 +34,32 @@ export class LeadsService {
       try {
         const typeLabel = dto.type === 'TU_VAN' ? 'Tư vấn (Liên hệ)' : 'Đăng ký học thử';
         const subject = `[Website] ${typeLabel} - ${dto.name}`;
-        const lines = [
-          `Loại: ${typeLabel}`,
-          `Họ tên: ${dto.name}`,
-          `Email: ${dto.email}`,
-          `Điện thoại: ${dto.phone}`,
+        const html = leadNotificationToAdmin({
+          type: dto.type,
+          name: dto.name,
+          email: dto.email,
+          phone: dto.phone,
+          message: dto.message,
+          courseInterest: dto.courseInterest,
+          timePreference: dto.timePreference,
+          note: dto.note,
+          createdAt: lead.createdAt,
+        });
+        const text = [
+          `${typeLabel}\nHọ tên: ${dto.name}\nEmail: ${dto.email}\nĐiện thoại: ${dto.phone}`,
           dto.message ? `Nội dung: ${dto.message}` : '',
           dto.courseInterest ? `Khóa quan tâm: ${dto.courseInterest}` : '',
           dto.timePreference ? `Khung giờ: ${dto.timePreference}` : '',
           dto.note ? `Ghi chú: ${dto.note}` : '',
           `Thời gian: ${lead.createdAt.toLocaleString('vi-VN')}`,
-        ].filter(Boolean);
-        const text = lines.join('\n');
+        ].filter(Boolean).join('\n');
         const result = await this.mail.send({
           to: ownerEmail,
           subject,
           text,
-          html: '<pre style="font-family:sans-serif">' + text.replace(/\n/g, '<br>') + '</pre>',
+          html,
           replyTo: dto.email,
+          saveToSent: false,
         });
         if (!result.success) {
           console.warn('[Leads] Gửi email thất bại:', result.error);

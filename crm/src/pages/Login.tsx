@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LayoutGrid, Mail, Lock } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -25,45 +26,64 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm p-6 bg-white rounded-lg shadow-xl"
-      >
-        <h1 className="text-xl font-bold text-center mb-6">CRM - Chinese Center</h1>
-        {error && (
-          <div className="mb-4 p-2 text-sm text-red-600 bg-red-50 rounded">
-            {error}
+    <div className="min-h-screen flex items-center justify-center bg-crm-side p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-crm-accent text-white mb-4">
+            <LayoutGrid size={28} />
           </div>
-        )}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            required
-          />
+          <h1 className="text-2xl font-bold text-white">Chinese Center CRM</h1>
+          <p className="mt-2 text-slate-400 text-sm">Đăng nhập để quản lý nội dung</p>
         </div>
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-gray-900 text-white py-2 rounded hover:bg-gray-800 disabled:opacity-50"
+        <form
+          onSubmit={handleSubmit}
+          className="crm-card p-6 sm:p-8 shadow-cardHover"
         >
-          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-        </button>
-      </form>
+          {error && (
+            <div className="mb-4 p-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg">
+              {error}
+            </div>
+          )}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="crm-input pl-10"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Mật khẩu</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="crm-input pl-10"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="crm-btn-primary w-full py-2.5"
+          >
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          </button>
+        </form>
+        <p className="mt-6 text-center text-slate-500 text-xs">
+          Chỉ dành cho quản trị viên Chinese Center
+        </p>
+      </div>
     </div>
   );
 }

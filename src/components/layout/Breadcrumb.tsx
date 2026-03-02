@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 
 const pathLabels: Record<string, string> = {
   'khoa-hoc': 'Khóa học',
+  'bai-hoc': 'Bài học',
   'doi-ngu-giao-vien': 'Đội ngũ giáo viên',
   'lien-he': 'Liên hệ',
   've-chung-toi': 'Về chúng tôi',

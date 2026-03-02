@@ -1,26 +1,55 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import SectionTitle from '@/components/ui/SectionTitle';
 import CourseCard from '@/components/courses/CourseCard';
 import { useGetCoursesQuery } from '@/store/apiSlice';
 
-const filters = [
-  { value: 'all', label: 'Tất cả' },
-  { value: 'HSK1', label: 'HSK 1' },
-  { value: 'HSK2', label: 'HSK 2' },
-  { value: 'HSK3', label: 'HSK 3' },
-  { value: 'HSK4', label: 'HSK 4' },
-  { value: 'KIDS', label: 'Thiếu nhi' },
-  { value: 'BUSINESS', label: 'Doanh nghiệp' },
-];
+const LEVEL_LABELS: Record<string, string> = {
+  HSK1: 'HSK 1',
+  HSK2: 'HSK 2',
+  HSK3: 'HSK 3',
+  HSK4: 'HSK 4',
+  HSK5: 'HSK 5',
+  HSK6: 'HSK 6',
+  Beginner: 'Beginner',
+  Kids: 'Thiếu nhi',
+  BUSINESS: 'Doanh nghiệp',
+};
+
+function levelToLabel(level: string): string {
+  return LEVEL_LABELS[level] ?? level;
+}
 
 export default function CoursesPage() {
   const [level, setLevel] = useState('all');
   const { data, isLoading, isError } = useGetCoursesQuery();
   const items = data?.items ?? [];
+
+  const filters = useMemo(() => {
+    const levels = [...new Set(items.map((c) => (c.level || '').trim()).filter(Boolean))];
+    levels.sort((a, b) => {
+      const order = ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'Beginner', 'Kids', 'BUSINESS'];
+      const i = order.indexOf(a);
+      const j = order.indexOf(b);
+      if (i !== -1 && j !== -1) return i - j;
+      if (i !== -1) return -1;
+      if (j !== -1) return 1;
+      return a.localeCompare(b);
+    });
+    return [
+      { value: 'all', label: 'Tất cả' },
+      ...levels.map((value) => ({ value, label: levelToLabel(value) })),
+    ];
+  }, [items]);
+
+  useEffect(() => {
+    const values = filters.map((f) => f.value);
+    if (level !== 'all' && !values.includes(level)) setLevel('all');
+  }, [filters, level]);
+
   const filtered = level === 'all'
     ? items
-    : items.filter((c) => (c.level || '').toUpperCase() === level);
+    : items.filter((c) => (c.level || '').trim() === level);
 
   const coursesForCard = filtered.map((c) => ({
     id: c.id,

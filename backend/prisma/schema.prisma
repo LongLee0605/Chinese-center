@@ -93,21 +93,22 @@ model Post {
 
 // --------------- Khóa học & Bài học ---------------
 model Course {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  name        String
-  nameZh      String?
-  description String?  @db.Text
-  level       String
-  duration    Int
-  maxStudents Int      @default(20)
-  price       Decimal  @db.Decimal(10, 2)
-  currency    String   @default("VND")
-  status      String   @default("DRAFT")
-  slug        String   @unique
-  thumbnail   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  code               String   @unique
+  name               String
+  nameZh             String?
+  description        String?  @db.Text
+  learningObjectives String?  @db.Text // Mục tiêu học tập (mỗi dòng một mục)
+  level              String
+  duration           Int      // Số buổi
+  maxStudents        Int      @default(20)
+  price              Decimal  @db.Decimal(10, 2)
+  currency           String   @default("VND")
+  status             String   @default("DRAFT")
+  slug               String   @unique
+  thumbnail          String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   lessons Lesson[]
   quizzes Quiz[]

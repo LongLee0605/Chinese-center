@@ -10,7 +10,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Posts', 'Post', 'Courses', 'Teachers'],
+  tagTypes: ['Posts', 'Post', 'Courses', 'Course', 'Teachers'],
   endpoints: (builder) => ({
     getPosts: builder.query<
       { items: { id: string; title: string; slug: string; excerpt?: string; publishedAt?: string }[]; total: number },
@@ -33,6 +33,33 @@ export const apiSlice = createApi({
       query: () => '/courses?limit=50',
       providesTags: ['Courses'],
     }),
+    getCourseBySlug: builder.query<
+      {
+        id: string;
+        name: string;
+        nameZh?: string | null;
+        slug: string;
+        description?: string | null;
+        learningObjectives?: string | null;
+        level: string;
+        duration: number;
+        price?: number;
+        lessons: {
+          id: string;
+          title: string;
+          slug: string;
+          orderIndex: number;
+          durationMinutes?: number | null;
+          type: string;
+          content?: string | null;
+          videoUrl?: string | null;
+        }[];
+      },
+      string
+    >({
+      query: (slug) => `/courses/by-slug/${slug}`,
+      providesTags: (_result, _err, slug) => [{ type: 'Course', id: slug }],
+    }),
     getTeachers: builder.query<
       { items: { id: string; name: string; title?: string; bio?: string; avatarPath?: string; specializations?: string[]; yearsExperience?: number }[] },
       void
@@ -54,6 +81,7 @@ export const {
   useGetPostsQuery,
   useGetPostBySlugQuery,
   useGetCoursesQuery,
+  useGetCourseBySlugQuery,
   useGetTeachersQuery,
   useSubmitLeadMutation,
 } = apiSlice;

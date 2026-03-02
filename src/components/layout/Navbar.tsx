@@ -8,7 +8,6 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { openSearch, closeSearch } from '@/store/uiSlice';
 
 const navLinks = [
-  { to: '/', label: 'Trang chủ' },
   { to: '/khoa-hoc', label: 'Khóa học' },
   { to: '/doi-ngu-giao-vien', label: 'Đội ngũ giáo viên' },
   { to: '/ve-chung-toi', label: 'Về chúng tôi' },

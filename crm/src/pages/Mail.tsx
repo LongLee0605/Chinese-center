@@ -162,7 +162,7 @@ export default function Mail() {
   };
 
   return (
-    <div className="p-6 max-w-4xl">
+    <div className="crm-page max-w-4xl">
       <h1 className="text-2xl font-bold mb-2">Gửi email</h1>
       <p className="text-gray-600 text-sm mb-4">
         Gửi email từ CRM. Cần cấu hình SMTP trong <code className="bg-gray-200 px-1">backend/.env</code> (SMTP_HOST, SMTP_USER, SMTP_PASS).
@@ -185,14 +185,14 @@ export default function Mail() {
         <button
           type="button"
           onClick={() => { setView('compose'); setSentDetail(null); }}
-          className={`px-4 py-2 rounded-t ${view === 'compose' ? 'bg-gray-900 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+          className={`px-4 py-2 rounded-t ${view === 'compose' ? 'bg-crm-accent text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
         >
           Soạn email
         </button>
         <button
           type="button"
           onClick={() => setView('list')}
-          className={`px-4 py-2 rounded-t ${view === 'list' || view === 'detail' ? 'bg-gray-900 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+          className={`px-4 py-2 rounded-t ${view === 'list' || view === 'detail' ? 'bg-crm-accent text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
         >
           Email đã gửi
         </button>
@@ -230,7 +230,7 @@ export default function Mail() {
           <button
             type="submit"
             disabled={sending || configOk === false}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800 disabled:opacity-50"
+            className="crm-btn-primary disabled:opacity-50"
           >
             <Send size={18} />
             {sending ? 'Đang gửi...' : 'Gửi email'}
@@ -239,7 +239,11 @@ export default function Mail() {
       )}
 
       {view === 'list' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div>
+          <p className="text-gray-500 text-sm mb-2">
+            Chỉ liệt kê email đã gửi từ CRM (không bao gồm thông báo tự động khi có đăng ký từ website).
+          </p>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
           {!sentList ? (
             <div className="p-8 text-center text-gray-500">Đang tải...</div>
           ) : sentList.items.length === 0 ? (
@@ -309,6 +313,7 @@ export default function Mail() {
               )}
             </>
           )}
+          </div>
         </div>
       )}
 

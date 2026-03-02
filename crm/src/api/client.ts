@@ -117,10 +117,11 @@ export const postsApi = {
 };
 
 export const coursesApi = {
-  list: (params?: { page?: number; limit?: number }) => {
+  list: (params?: { page?: number; limit?: number; status?: string }) => {
     const q = new URLSearchParams();
     if (params?.page) q.set('page', String(params.page));
     if (params?.limit) q.set('limit', String(params.limit));
+    if (params?.status) q.set('status', params.status);
     return api<{ items: unknown[]; total: number }>(`/courses?${q}`);
   },
   get: (id: string) => api<unknown>(`/courses/${id}`),

@@ -36,21 +36,21 @@ export default function QuizzesList() {
     }
   }
 
-  if (!data) return <div className="p-6">Đang tải...</div>;
+  if (!data) return <div className="crm-page flex items-center justify-center min-h-[200px]"><span className="text-slate-500">Đang tải...</span></div>;
 
   return (
-    <div className="p-6">
+    <div className="crm-page">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Bài test</h1>
         <Link
           to="/quizzes/new"
-          className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800"
+          className="crm-btn-primary"
         >
           <Plus size={18} />
           Thêm bài test
         </Link>
       </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="crm-card overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>

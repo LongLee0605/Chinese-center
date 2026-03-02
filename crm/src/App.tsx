@@ -47,6 +47,7 @@ export default function App() {
           <Route path="posts/:id" element={<PostForm />} />
           <Route path="courses" element={<CoursesList />} />
           <Route path="courses/new" element={<CourseForm />} />
+          <Route path="courses/:id/edit" element={<CourseForm />} />
           <Route path="courses/:id" element={<CourseDetail />} />
           <Route path="quizzes" element={<QuizzesList />} />
           <Route path="quizzes/attempt/:attemptId" element={<QuizAttemptDetail />} />

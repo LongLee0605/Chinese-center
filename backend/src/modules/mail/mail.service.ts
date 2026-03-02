@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { wrapOutgoingEmail, textToSimpleHtml } from './templates/email-templates';
 
 export interface SendMailOptions {
   to: string | string[];
@@ -10,6 +11,8 @@ export interface SendMailOptions {
   text?: string;
   html?: string;
   replyTo?: string;
+  /** Nếu false thì không ghi vào bảng sent_emails (dùng cho email tự động từ website, chỉ CRM gửi mới lưu). */
+  saveToSent?: boolean;
 }
 
 @Injectable()
@@ -41,24 +44,36 @@ export class MailService {
     }
     const from = this.config.get<string>('SMTP_FROM') || this.config.get<string>('SMTP_USER') || 'noreply@chinese-center.local';
     const to = Array.isArray(options.to) ? options.to.join(', ') : options.to;
+    const saveToSent = options.saveToSent !== false;
+    let html = options.html;
+    if (saveToSent && (options.html || options.text)) {
+      const bodyContent = options.html?.trim() || textToSimpleHtml(options.text ?? '');
+      html = wrapOutgoingEmail(bodyContent, options.subject);
+    } else if (!html && options.text) {
+      html = '<p>' + String(options.text).replace(/\n/g, '<br>') + '</p>';
+    }
     try {
       const info = await this.transporter.sendMail({
         from,
         to,
         subject: options.subject,
         text: options.text,
-        html: options.html ?? (options.text ? '<p>' + String(options.text).replace(/\n/g, '<br>') + '</p>' : undefined),
+        html,
         replyTo: options.replyTo,
       });
-      const record = await this.prisma.sentEmail.create({
-        data: {
-          toAddresses: to,
-          subject: options.subject,
-          text: options.text ?? null,
-          html: options.html ?? null,
-        },
-      });
-      return { success: true, messageId: info.messageId, id: record.id };
+      let recordId: string | undefined;
+      if (saveToSent) {
+        const record = await this.prisma.sentEmail.create({
+          data: {
+            toAddresses: to,
+            subject: options.subject,
+            text: options.text ?? null,
+            html: options.html ?? null,
+          },
+        });
+        recordId = record.id;
+      }
+      return { success: true, messageId: info.messageId, id: recordId };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Gửi mail thất bại' };
     }

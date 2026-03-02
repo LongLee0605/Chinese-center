@@ -14,6 +14,8 @@ import SchedulePage from './pages/SchedulePage';
 import FaqPage from './pages/FaqPage';
 import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
+import CourseDetailPage from './pages/CourseDetailPage';
+import LessonDetailPage from './pages/LessonDetailPage';
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
         <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/khoa-hoc" element={<CoursesPage />} />
+        <Route path="/khoa-hoc/:courseSlug/bai-hoc/:lessonSlug" element={<LessonDetailPage />} />
+        <Route path="/khoa-hoc/:courseSlug" element={<CourseDetailPage />} />
         <Route path="/doi-ngu-giao-vien" element={<TeachersPage />} />
         <Route path="/ve-chung-toi" element={<AboutPage />} />
         <Route path="/lien-he" element={<ContactPage />} />
