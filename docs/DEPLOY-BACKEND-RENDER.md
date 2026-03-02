@@ -186,7 +186,7 @@ Nếu bạn dùng seed để tạo admin/teacher:
 |-----------------|----------|--------|
 | `NODE_ENV`      | Có       | `production` |
 | `DATABASE_URL`  | Có       | Internal URL từ Postgres service |
-| `JWT_SECRET`    | Có       | Chuỗi bí mật mạnh |
+| `JWT_SECRET`    | Có       | Chuỗi bí mật mạnh; nếu thiếu backend sẽ không khởi động |
 | `JWT_EXPIRES_IN` | Không  | Mặc định `7d` |
 | `CORS_ORIGINS`  | Có       | URL FE (Vercel) cách nhau dấu phẩy, hoặc `*` tạm thời |
 | `PORT`          | Không    | Render tự set |

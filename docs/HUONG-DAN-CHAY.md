@@ -7,7 +7,10 @@
 ## Đã thao tác sẵn cho bạn
 
 - **`backend/.env`** – Đã tạo, dùng kết nối PostgreSQL (Docker: `chinese:chinese123@localhost:5432/chinese_center`). Nếu bạn dùng PostgreSQL khác hoặc database cloud, chỉ cần sửa lại `DATABASE_URL`.
-- **`crm/.env`** – Đã tạo, `VITE_API_URL=http://localhost:4000/api/v1`.
+- **Hai môi trường (local / production):**
+  - **Local:** CRM và Website dùng file `.env.development` (đã có trong repo) → gọi `http://localhost:4000/api/v1`. Cần chạy backend trên máy (`cd backend && npm run dev`).
+  - **Production (Vercel / Render):** Dùng `.env.production` → gọi `https://chinese-center.onrender.com/api/v1`. Không cần set thêm env trên Vercel nếu đã commit `.env.production`.
+  - Nếu bạn vẫn tạo `crm/.env` hoặc `.env` ở gốc (từ `.env.example`), dùng cho local; khi chạy `npm run dev`, Vite ưu tiên `.env.development`.
 - **`docker-compose.yml`** – Chạy PostgreSQL bằng một lệnh: `docker compose up -d`.
 - **`scripts/start-dev.ps1`** – Script tự động: bật DB → push schema → seed → chạy Backend + CRM (cần Docker).
 
@@ -110,22 +113,18 @@ Giữ terminal này mở (hoặc chạy trong background).
 
 ---
 
-## 6. Cấu hình CRM
+## 6. Cấu hình CRM (local)
 
-Mở terminal mới, vào thư mục CRM và tạo `.env`:
+CRM đã có sẵn **`.env.development`** trong repo → khi chạy `npm run dev` sẽ tự gọi `http://localhost:4000/api/v1`. Không bắt buộc tạo `crm/.env` nữa.
+
+Nếu muốn ghi đè (vd. backend chạy port khác), tạo `crm/.env`:
 
 ```bash
 cd crm
 copy .env.example .env
 ```
 
-Mở `crm/.env`, đảm bảo:
-
-```env
-VITE_API_URL=http://localhost:4000/api/v1
-```
-
-(Nếu backend chạy port khác thì sửa cho đúng.)
+Rồi sửa `VITE_API_URL` trong `crm/.env` nếu cần (vd. backend port khác 4000).
 
 ---
 

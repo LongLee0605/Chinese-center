@@ -1,17 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { teachersApi, type Teacher } from '../../api/client';
+import { teachersApi, avatarUrl, type Teacher } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
-const UPLOADS_BASE = API_BASE.replace(/\/api\/v1\/?$/, '');
-
-function avatarUrl(avatarPath: string | null | undefined): string {
-  if (!avatarPath) return '';
-  if (avatarPath.startsWith('http')) return avatarPath;
-  return `${UPLOADS_BASE}/uploads/${avatarPath}`;
-}
 
 export default function TeachersList() {
   const { show } = useToast();

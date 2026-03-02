@@ -1,11 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+import { getApiBase } from '@/lib/api';
 
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE,
+    baseUrl: getApiBase(),
     prepareHeaders: (headers) => {
       headers.set('Content-Type', 'application/json');
       return headers;
@@ -21,7 +20,7 @@ export const apiSlice = createApi({
       providesTags: ['Posts'],
     }),
     getPostBySlug: builder.query<
-      { id: string; title: string; slug: string; body?: string; excerpt?: string; publishedAt?: string },
+      { id: string; title: string; slug: string; body?: string; excerpt?: string; publishedAt?: string; coverImage?: string | null },
       string
     >({
       query: (slug) => `/posts/by-slug/${slug}`,

@@ -1,15 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { postsApi } from '../../api/client';
+import { postsApi, getUploadsBase } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
+import RichTextEditor from '../../components/RichTextEditor';
+import { ImagePlus } from 'lucide-react';
+
+function coverImageUrl(coverImage: string): string {
+  if (!coverImage) return '';
+  if (coverImage.startsWith('http')) return coverImage;
+  return `${getUploadsBase()}/uploads/${coverImage}`;
+}
 
 export default function PostForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { show } = useToast();
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const isNew = id === 'new' || !id;
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [form, setForm] = useState({
     title: '',
     slug: '',
@@ -37,6 +47,26 @@ export default function PostForm() {
         .finally(() => setLoading(false));
     }
   }, [id, isNew]);
+
+  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^image\/(jpeg|png|gif|webp)$/i.test(file.type)) {
+      show('error', 'Chỉ chấp nhận ảnh (JPEG, PNG, GIF, WebP).');
+      return;
+    }
+    setUploadingCover(true);
+    try {
+      const { path } = await postsApi.uploadImage(file);
+      setForm((f) => ({ ...f, coverImage: path }));
+      show('success', 'Đã tải ảnh bìa lên.');
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Tải ảnh lên thất bại.');
+    } finally {
+      setUploadingCover(false);
+    }
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,21 +118,58 @@ export default function PostForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Nội dung (HTML/Markdown)</label>
-          <textarea
+          <label className="block text-sm font-medium mb-1">Nội dung bài viết</label>
+          <p className="text-xs text-gray-500 mb-1">
+            Dùng công cụ trên để định dạng: tiêu đề, in đậm, danh sách, link. Nội dung hiển thị trên website giống y như tại đây.
+          </p>
+          <RichTextEditor
             value={form.body}
-            onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
-            className="w-full border rounded px-3 py-2 font-mono text-sm"
-            rows={12}
+            onChange={(html) => setForm((f) => ({ ...f, body: html }))}
+            placeholder="Nhập nội dung bài viết..."
+            minHeight="320px"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Ảnh bìa (URL)</label>
+          <label className="block text-sm font-medium mb-1">Ảnh bìa</label>
           <input
-            value={form.coverImage}
-            onChange={(e) => setForm((f) => ({ ...f, coverImage: e.target.value }))}
-            className="w-full border rounded px-3 py-2"
+            ref={coverInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            className="hidden"
+            onChange={handleCoverChange}
           />
+          <div className="flex flex-col sm:flex-row gap-3 items-start">
+            {form.coverImage && (
+              <div className="shrink-0 w-40 h-28 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                <img
+                  src={coverImageUrl(form.coverImage)}
+                  alt="Bìa"
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingCover}
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 text-sm font-medium"
+              >
+                <ImagePlus className="h-4 w-4" />
+                {uploadingCover ? 'Đang tải lên...' : form.coverImage ? 'Đổi ảnh bìa' : 'Tải ảnh bìa lên'}
+              </button>
+              {form.coverImage && (
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, coverImage: '' }))}
+                  className="text-sm text-gray-500 hover:text-red-600"
+                >
+                  Xóa ảnh bìa
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Trạng thái</label>

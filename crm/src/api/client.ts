@@ -1,8 +1,27 @@
-// Dev: dùng VITE_API_URL hoặc localhost
-// Prod (Vercel): luôn trỏ về backend Render
-const API_BASE = import.meta.env.DEV
-  ? import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1'
-  : 'https://chinese-center.onrender.com/api/v1';
+// Local: .env.development hoặc fallback localhost
+// Production: .env.production hoặc fallback Render
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
+    ? 'http://localhost:4000/api/v1'
+    : 'https://chinese-center.onrender.com/api/v1');
+
+/** Base URL của API (dùng chung cho fetch). */
+export function getApiBase(): string {
+  return API_BASE;
+}
+
+/** Gốc URL để build đường dẫn upload (avatar, v.v.). */
+export function getUploadsBase(): string {
+  return API_BASE.replace(/\/api\/v1\/?$/, '');
+}
+
+/** Build URL avatar từ path lưu trong DB. */
+export function avatarUrl(avatarPath: string | null | undefined): string {
+  if (!avatarPath) return '';
+  if (avatarPath.startsWith('http')) return avatarPath;
+  return `${getUploadsBase()}/uploads/${avatarPath}`;
+}
 
 function getToken(): string | null {
   return localStorage.getItem('crm_token');
@@ -55,6 +74,28 @@ export const postsApi = {
   update: (id: string, body: Record<string, unknown>) =>
     api<unknown>(`/posts/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (id: string) => api<unknown>(`/posts/${id}`, { method: 'DELETE' }),
+  /** Upload ảnh cho nội dung bài viết. Trả về path (vd: posts/xxx.jpg) để build URL: getUploadsBase() + '/uploads/' + path */
+  uploadImage: async (file: File): Promise<{ path: string }> => {
+    const token = getToken();
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${API_BASE}/posts/upload-image`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (res.status === 401) {
+      localStorage.removeItem('crm_token');
+      localStorage.removeItem('crm_user');
+      window.location.href = '/login';
+      throw new Error('Unauthorized');
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error((err as { message?: string }).message || 'Upload thất bại');
+    }
+    return res.json();
+  },
 };
 
 export const coursesApi = {

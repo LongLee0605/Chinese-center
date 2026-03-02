@@ -1,4 +1,20 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+// Local: .env.development hoặc fallback localhost
+// Production: .env.production hoặc fallback Render
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
+    ? 'http://localhost:4000/api/v1'
+    : 'https://chinese-center.onrender.com/api/v1');
+
+/** Base URL của API (dùng chung cho fetch / RTK Query). */
+export function getApiBase(): string {
+  return API_BASE;
+}
+
+/** Gốc URL để build đường dẫn upload (avatar, v.v.). */
+export function getUploadsBase(): string {
+  return API_BASE.replace(/\/api\/v1\/?$/, '');
+}
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

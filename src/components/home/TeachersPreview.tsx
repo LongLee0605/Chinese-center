@@ -5,10 +5,7 @@ import SectionTitle from '@/components/ui/SectionTitle';
 import TeacherCard from '@/components/teachers/TeacherCard';
 import Button from '@/components/ui/Button';
 import { useGetTeachersQuery } from '@/store/apiSlice';
-
-const uploadsBase = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '')
-  : '';
+import { getUploadsBase } from '@/lib/api';
 
 function mapApiTeacherToCard(t: {
   id: string;
@@ -22,13 +19,14 @@ function mapApiTeacherToCard(t: {
   const parts = (t.name || '').trim().split(/\s+/);
   const lastName = parts.length > 1 ? parts[0] : '';
   const firstName = parts.length > 1 ? parts.slice(1).join(' ') : t.name || '';
+  const uploadsBase = getUploadsBase();
   return {
     id: t.id,
     firstName: firstName || '—',
     lastName: lastName || '—',
     role: t.title ?? 'Giáo viên',
     bio: t.bio ?? '',
-    avatar: t.avatarPath ? uploadsBase + '/uploads/' + t.avatarPath : null,
+    avatar: t.avatarPath ? `${uploadsBase}/uploads/${t.avatarPath}` : null,
     specializations: t.specializations ?? [],
     yearsExperience: t.yearsExperience,
   };

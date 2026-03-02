@@ -9,13 +9,26 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { PostStatus } from '@prisma/client';
+import * as multer from 'multer';
+import { extname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+
+const postsUploadDir = 'uploads/posts';
+
+function ensureDir() {
+  if (!existsSync(postsUploadDir)) mkdirSync(postsUploadDir, { recursive: true });
+}
 
 @Controller('posts')
 export class PostsController {
@@ -56,6 +69,33 @@ export class PostsController {
   }
 
   // ----- CRM (Admin/Teacher) -----
+  @Post('upload-image')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: multer.diskStorage({
+        destination: (_req, _file, cb) => {
+          ensureDir();
+          cb(null, postsUploadDir);
+        },
+        filename: (_req, file, cb) => {
+          const ext = extname(file.originalname || '') || '.jpg';
+          const name = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}${ext}`;
+          cb(null, name);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const ok = /^image\/(jpeg|png|gif|webp)$/i.test(file.mimetype);
+        cb(null, !!ok);
+      },
+    }),
+  )
+  uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file || !file.filename) throw new BadRequestException('Chưa chọn file ảnh hợp lệ');
+    return { path: `posts/${file.filename}` };
+  }
+
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   create(@Request() req: { user: { sub: string } }, @Body() dto: CreatePostDto) {

@@ -2,6 +2,14 @@ import { useParams, Link } from 'react-router-dom';
 import { Calendar, ArrowLeft } from 'lucide-react';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import { useGetPostBySlugQuery } from '@/store/apiSlice';
+import { getUploadsBase } from '@/lib/api';
+import { bodyLooksLikeHtml, plainTextToHtml } from '@/lib/utils';
+
+function postCoverUrl(coverImage: string | null | undefined): string {
+  if (!coverImage) return '';
+  if (coverImage.startsWith('http')) return coverImage;
+  return `${getUploadsBase()}/uploads/${coverImage}`;
+}
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -40,6 +48,15 @@ export default function BlogPostPage() {
             Về tin tức
           </Link>
           <header className="mb-8">
+            {post.coverImage && (
+              <div className="rounded-xl overflow-hidden mb-6 bg-primary-100">
+                <img
+                  src={postCoverUrl(post.coverImage)}
+                  alt=""
+                  className="w-full h-auto max-h-[420px] object-cover"
+                />
+              </div>
+            )}
             {dateStr && (
               <p className="flex items-center gap-2 text-primary-500 text-sm mb-2">
                 <Calendar className="h-4 w-4" />
@@ -49,8 +66,16 @@ export default function BlogPostPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-primary-900">{post.title}</h1>
           </header>
           <div
-            className="prose prose-slate max-w-none text-primary-700 leading-relaxed"
-            dangerouslySetInnerHTML={post.body ? { __html: post.body } : undefined}
+            className="prose prose-slate max-w-none text-primary-700 leading-relaxed prose-p:mb-4 prose-ul:my-3 prose-ol:my-3"
+            dangerouslySetInnerHTML={
+              post.body
+                ? {
+                    __html: bodyLooksLikeHtml(post.body)
+                      ? post.body
+                      : plainTextToHtml(post.body),
+                  }
+                : undefined
+            }
           />
           {!post.body && post.excerpt && (
             <p className="text-primary-700">{post.excerpt}</p>
