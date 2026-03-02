@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Calendar, ArrowLeft } from 'lucide-react';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import { useGetPostBySlugQuery } from '@/store/apiSlice';
-import { getUploadsBase } from '@/lib/api';
+import { getUploadsBase, bodyHtmlForDisplay } from '@/lib/api';
 import { bodyLooksLikeHtml, plainTextToHtml } from '@/lib/utils';
 
 function postCoverUrl(coverImage: string | null | undefined): string {
@@ -71,7 +71,7 @@ export default function BlogPostPage() {
               post.body
                 ? {
                     __html: bodyLooksLikeHtml(post.body)
-                      ? post.body
+                      ? bodyHtmlForDisplay(post.body)
                       : plainTextToHtml(post.body),
                   }
                 : undefined

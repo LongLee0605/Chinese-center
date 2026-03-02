@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
+import ScrollToTop from './components/layout/ScrollToTop';
 import HomePage from './pages/HomePage';
 import CoursesPage from './pages/CoursesPage';
 import TeachersPage from './pages/TeachersPage';
@@ -16,8 +17,10 @@ import BlogPostPage from './pages/BlogPostPage';
 
 function App() {
   return (
-    <Layout>
-      <Routes>
+    <>
+      <ScrollToTop />
+      <Layout>
+        <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/khoa-hoc" element={<CoursesPage />} />
         <Route path="/doi-ngu-giao-vien" element={<TeachersPage />} />
@@ -31,8 +34,9 @@ function App() {
         <Route path="/tin-tuc/:slug" element={<BlogPostPage />} />
         <Route path="/bai-test" element={<QuizListPage />} />
         <Route path="/bai-test/:slug" element={<QuizTestPage />} />
-      </Routes>
-    </Layout>
+        </Routes>
+      </Layout>
+    </>
   );
 }
 

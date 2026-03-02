@@ -23,6 +23,24 @@ export function avatarUrl(avatarPath: string | null | undefined): string {
   return `${getUploadsBase()}/uploads/${avatarPath}`;
 }
 
+/** Placeholder lưu trong DB thay cho full URL ảnh (tránh localhost khi xem production). */
+export const UPLOADS_PLACEHOLDER = '__UPLOADS__/';
+
+/** Chuẩn hóa body HTML trước khi lưu: thay mọi base upload bằng placeholder. */
+export function bodyHtmlForSave(html: string): string {
+  if (!html) return html;
+  return html.replace(/https?:\/\/[^/"'\s]+\/uploads\//gi, UPLOADS_PLACEHOLDER);
+}
+
+/** Chuẩn hóa body HTML khi hiển thị: thay placeholder và URL upload cũ bằng base hiện tại. */
+export function bodyHtmlForDisplay(html: string): string {
+  if (!html) return html;
+  const base = `${getUploadsBase()}/uploads/`;
+  let out = html.replace(new RegExp(UPLOADS_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), base);
+  out = out.replace(/src="(https?:\/\/[^"]+)\/uploads\/([^"]+)"/gi, (_m, _host, path) => `src="${base}${path}"`);
+  return out;
+}
+
 function getToken(): string | null {
   return localStorage.getItem('crm_token');
 }

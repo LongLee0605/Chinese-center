@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ScrollToTop from './components/ScrollToTop';
 import { ToastProvider } from './context/ToastContext';
 import Layout from './layout/Layout';
 import Login from './pages/Login';
@@ -29,6 +30,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
+      <ScrollToTop />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route

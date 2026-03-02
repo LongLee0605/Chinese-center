@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { authApi } from '../api/client';
 
 type User = { id: string; email: string; firstName: string; lastName: string; role: string } | null;
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await authApi.login(email, password);
     localStorage.setItem('crm_token', res.access_token);
     localStorage.setItem('crm_user', JSON.stringify(res.user));
-    setUser(res.user);
+    flushSync(() => setUser(res.user));
   }, []);
 
   const logout = useCallback(() => {

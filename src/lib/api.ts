@@ -16,6 +16,17 @@ export function getUploadsBase(): string {
   return API_BASE.replace(/\/api\/v1\/?$/, '');
 }
 
+const UPLOADS_PLACEHOLDER = '__UPLOADS__/';
+
+/** Chuẩn hóa body HTML khi hiển thị: thay placeholder và URL upload cũ bằng base hiện tại (tránh lỗi ảnh localhost trên production). */
+export function bodyHtmlForDisplay(html: string): string {
+  if (!html) return html;
+  const base = `${getUploadsBase()}/uploads/`;
+  let out = html.replace(new RegExp(UPLOADS_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), base);
+  out = out.replace(/src="(https?:\/\/[^"]+)\/uploads\/([^"]+)"/gi, (_m, _host, path) => `src="${base}${path}"`);
+  return out;
+}
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,

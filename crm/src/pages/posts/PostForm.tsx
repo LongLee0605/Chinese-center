@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { postsApi, getUploadsBase } from '../../api/client';
+import { postsApi, getUploadsBase, bodyHtmlForSave, bodyHtmlForDisplay } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import RichTextEditor from '../../components/RichTextEditor';
 import { ImagePlus } from 'lucide-react';
@@ -38,7 +38,7 @@ export default function PostForm() {
             title: p.title ?? '',
             slug: p.slug ?? '',
             excerpt: p.excerpt ?? '',
-            body: p.body ?? '',
+            body: bodyHtmlForDisplay(p.body ?? ''),
             coverImage: p.coverImage ?? '',
             status: p.status ?? 'DRAFT',
           })
@@ -73,6 +73,7 @@ export default function PostForm() {
     setSaving(true);
     const payload = {
       ...form,
+      body: bodyHtmlForSave(form.body),
       publishedAt: form.status === 'PUBLISHED' ? new Date().toISOString() : undefined,
     };
     (isNew ? postsApi.create(payload) : postsApi.update(id!, payload))
