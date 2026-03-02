@@ -109,6 +109,20 @@ Lưu lại URL dạng:
 
 ---
 
+## Xử lý lỗi gửi email (production)
+
+- **Form website (Liên hệ / Đăng ký học thử) báo lỗi hoặc không gửi được**
+  - **CORS**: Đảm bảo `CORS_ORIGINS` trên Render có **đúng origin** của website (vd: `https://chinese-center-web.pages.dev` hoặc domain tùy chỉnh). Nhiều origin cách nhau bằng dấu phẩy, không dấu cách thừa.
+  - **API URL**: Website production phải gọi đúng backend (build với `VITE_API_URL=https://...onrender.com/api/v1` hoặc set khi build trên Cloudflare/Vercel).
+- **Lead lưu được nhưng không nhận được email thông báo**
+  - Kiểm tra đã thêm đủ biến SMTP và `LEAD_OWNER_EMAIL` trên Render (Environment).
+  - Vào Render → Web Service → **Logs**. Tìm dòng `[Leads] Gửi email thất bại:` hoặc `[Leads] Lỗi khi gửi email` để xem lý do (vd: Gmail báo "Invalid login" → dùng App Password).
+- **CRM gửi email thất bại**
+  - Trong CRM: **Mail → Kiểm tra SMTP**. Nếu báo "Chưa cấu hình" thì backend chưa có SMTP_HOST / SMTP_USER / SMTP_PASS.
+  - Nếu báo "SMTP đã cấu hình" nhưng gửi vẫn lỗi: xem message lỗi trong toast; thường do sai mật khẩu (Gmail: dùng App Password) hoặc firewall/block port 587.
+
+---
+
 ## Nếu Bước 4 (Deploy) bị Failed
 
 1. **Xem log lỗi**

@@ -62,10 +62,10 @@ export class LeadsService {
           saveToSent: false,
         });
         if (!result.success) {
-          console.warn('[Leads] Gửi email thất bại:', result.error);
+          console.warn('[Leads] Gửi email thất bại:', result.error, '| Lead id:', lead.id);
         }
       } catch (err) {
-        console.warn('[Leads] Lỗi khi gửi email (lead đã lưu):', err);
+        console.warn('[Leads] Lỗi khi gửi email (lead đã lưu):', err instanceof Error ? err.message : err, '| Lead id:', lead.id);
       }
     }
 

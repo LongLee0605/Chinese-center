@@ -23,15 +23,16 @@ export class MailService {
     private config: ConfigService,
     private prisma: PrismaService,
   ) {
-    const host = this.config.get<string>('SMTP_HOST');
-    const port = this.config.get<number>('SMTP_PORT');
-    const user = this.config.get<string>('SMTP_USER');
+    const host = this.config.get<string>('SMTP_HOST')?.trim();
+    const portRaw = this.config.get<string>('SMTP_PORT');
+    const port = (portRaw != null && portRaw !== '' ? Number(portRaw) : 587) || 587;
+    const user = this.config.get<string>('SMTP_USER')?.trim();
     const pass = this.config.get<string>('SMTP_PASS');
     const secure = this.config.get<string>('SMTP_SECURE') === 'true';
     if (host && user && pass) {
       this.transporter = nodemailer.createTransport({
         host,
-        port: port ?? 587,
+        port: Number.isNaN(port) ? 587 : port,
         secure,
         auth: { user, pass },
       });
