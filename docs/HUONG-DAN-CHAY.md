@@ -7,14 +7,35 @@
 ## Đã thao tác sẵn cho bạn
 
 - **`backend/.env`** – Đã tạo, dùng kết nối PostgreSQL (Docker: `chinese:chinese123@localhost:5432/chinese_center`). Nếu bạn dùng PostgreSQL khác hoặc database cloud, chỉ cần sửa lại `DATABASE_URL`.
-- **Hai môi trường (local / production):**
-  - **Local:** CRM và Website dùng file `.env.development` (đã có trong repo) → gọi `http://localhost:4000/api/v1`. Cần chạy backend trên máy (`cd backend && npm run dev`).
-  - **Production (Vercel / Render):** Dùng `.env.production` → gọi `https://chinese-center.onrender.com/api/v1`. Không cần set thêm env trên Vercel nếu đã commit `.env.production`.
-  - Nếu bạn vẫn tạo `crm/.env` hoặc `.env` ở gốc (từ `.env.example`), dùng cho local; khi chạy `npm run dev`, Vite ưu tiên `.env.development`.
+- **Hai môi trường (local / production) – xem thêm mục "Tách biệt Local và Production" bên dưới:**
+  - **Local:** Backend dùng **database local** (`DATABASE_URL` trỏ `localhost`). CRM và Website dùng `.env.development` → gọi `http://localhost:4000/api/v1`. Chạy backend trên máy: `cd backend && npm run dev`.
+  - **Production:** Backend trên Render dùng **database Render**. CRM/Website deploy dùng `.env.production` hoặc biến Build → gọi `https://chinese-center.onrender.com/api/v1`.
+  - Không trộn: khi chạy local, không set `DATABASE_URL` là URL database của Render.
 - **`docker-compose.yml`** – Chạy PostgreSQL bằng một lệnh: `docker compose up -d`.
 - **`scripts/start-dev.ps1`** – Script tự động: bật DB → push schema → seed → chạy Backend + CRM (cần Docker).
 
 **Việc bạn cần làm:** Bật PostgreSQL (Docker hoặc cài sẵn hoặc database cloud), rồi chạy các lệnh ở mục 4, 5, 7 bên dưới.
+
+---
+
+## Tách biệt Local và Production (quan trọng)
+
+Để **không bị lỗi ảnh** (upload local mà production lỗi) và **không lẫn data**, luôn tách rõ hai môi trường:
+
+| | **Local** | **Production** |
+|---|------------|----------------|
+| **CRM** | Chạy `cd crm && npm run dev` → dùng `crm/.env.development` | Build deploy lên Cloudflare Pages → dùng biến Build `VITE_API_URL` (Render) |
+| **Backend** | Chạy `cd backend && npm run dev` → dùng `backend/.env` | Deploy trên Render → env set trong Dashboard |
+| **Database** | **Bắt buộc** dùng PostgreSQL **local** (Docker hoặc máy). `backend/.env` có `DATABASE_URL="postgresql://...@localhost:5432/..."` | Render Postgres → `DATABASE_URL` = Internal Database URL (set trên Render) |
+| **Upload ảnh** | Lưu vào thư mục `backend/uploads/` trên máy | Lưu trên server Render |
+
+**Quy tắc:**
+
+- **Local backend** chỉ trỏ `DATABASE_URL` tới DB **local** (localhost / Docker). Không dùng URL database của Render khi chạy `npm run dev`.
+- **CRM local** chỉ trỏ `VITE_API_URL` tới `http://localhost:4000/api/v1` (file `crm/.env.development`).
+- **Production**: CRM trên Cloudflare gọi API Render; backend Render dùng database Render. Ảnh upload từ production CRM lưu trên Render.
+
+Nếu bạn cấu hình đúng như trên, upload ảnh ở local sẽ không ảnh hưởng production và ngược lại. Cú pháp code và file env giống nhau, chỉ khác **giá trị** (localhost vs URL Render).
 
 ---
 

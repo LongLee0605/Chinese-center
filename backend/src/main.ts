@@ -5,6 +5,15 @@ import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  // Cảnh báo: local không nên dùng database production (Render) – dễ gây lỗi ảnh, data lẫn lộn.
+  if (process.env.NODE_ENV !== 'production' && process.env.DATABASE_URL?.includes('onrender.com')) {
+    console.warn(
+      '\n⚠️  CẢNH BÁO: Bạn đang chạy LOCAL nhưng DATABASE_URL trỏ tới Render (production).\n' +
+        '    Nên dùng database local (Docker / PostgreSQL máy) để tách biệt data và upload ảnh.\n' +
+        '    Xem docs/HUONG-DAN-CHAY.md mục "Tách biệt Local và Production".\n',
+    );
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   // Local: localhost. Production: CORS_ORIGINS (comma-separated). Cloudflare Pages: *.pages.dev cho cả production và preview URL.
