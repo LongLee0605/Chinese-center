@@ -1,6 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
 import { Clock, FileText, Video, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
-import Breadcrumb from '@/components/layout/Breadcrumb';
 import { useGetCourseBySlugQuery } from '@/store/apiSlice';
 import { bodyHtmlForDisplay } from '@/lib/api';
 import { bodyLooksLikeHtml, plainTextToHtml } from '@/lib/utils';
