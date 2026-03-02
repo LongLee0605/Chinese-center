@@ -7,12 +7,18 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
-  // Local: localhost (5173=website, 5174=CRM). Production: thêm từ CORS_ORIGINS (Vercel URLs)
+  // Local: localhost. Production: CORS_ORIGINS (comma-separated). Cloudflare Pages: *.pages.dev cho cả production và preview URL.
   const originsFromEnv = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) ?? [];
   const localhostOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'];
-  const origins = [...new Set([...localhostOrigins, ...originsFromEnv])];
+  const explicitOrigins = [...new Set([...localhostOrigins, ...originsFromEnv])];
+  const cloudflarePagesRegex = /^https:\/\/([a-z0-9-]+\.)?chinese-center-(web|crm)\.pages\.dev$/;
   app.enableCors({
-    origin: origins.length > 0 ? origins : true,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (explicitOrigins.includes(origin)) return callback(null, true);
+      if (cloudflarePagesRegex.test(origin)) return callback(null, true);
+      callback(null, false);
+    },
     credentials: true,
   });
   app.setGlobalPrefix('api/v1');
