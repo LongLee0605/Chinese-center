@@ -33,16 +33,17 @@ export default function PostForm() {
     if (!isNew && id) {
       postsApi
         .get(id)
-        .then((p: Record<string, unknown>) =>
+        .then((p: unknown) => {
+          const data = p as Record<string, unknown>;
           setForm({
-            title: String(p.title ?? ''),
-            slug: String(p.slug ?? ''),
-            excerpt: String(p.excerpt ?? ''),
-            body: bodyHtmlForDisplay(String(p.body ?? '')),
-            coverImage: String(p.coverImage ?? ''),
-            status: String(p.status ?? 'DRAFT'),
-          })
-        )
+            title: String(data.title ?? ''),
+            slug: String(data.slug ?? ''),
+            excerpt: String(data.excerpt ?? ''),
+            body: bodyHtmlForDisplay(String(data.body ?? '')),
+            coverImage: String(data.coverImage ?? ''),
+            status: String(data.status ?? 'DRAFT'),
+          });
+        })
         .catch(console.error)
         .finally(() => setLoading(false));
     }
