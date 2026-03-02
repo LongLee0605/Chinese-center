@@ -3,10 +3,10 @@ import { PostStatus } from '@prisma/client';
 
 export class CreatePostDto {
   @IsString()
-  title: string;
+  title!: string;
 
   @IsString()
-  slug: string;
+  slug!: string;
 
   @IsOptional()
   @IsString()

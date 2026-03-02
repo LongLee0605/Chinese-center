@@ -87,8 +87,8 @@ export default function CourseDetail() {
       }
       setShowLessonForm(false);
       if (id) coursesApi.get(id).then((c: any) => setCourse(c));
-    } catch (err: any) {
-      show('error', err?.message || 'Lưu thất bại.');
+    } catch (err: unknown) {
+      show('error', err instanceof Error ? err.message : 'Lưu thất bại.');
     }
   }
 
@@ -98,8 +98,8 @@ export default function CourseDetail() {
       await lessonsApi.delete(lessonId);
       if (id) coursesApi.get(id).then((c: any) => setCourse(c));
       show('success', 'Đã xóa bài học.');
-    } catch (err: any) {
-      show('error', err?.message || 'Xóa thất bại.');
+    } catch (err: unknown) {
+      show('error', err instanceof Error ? err.message : 'Xóa thất bại.');
     }
   }
 

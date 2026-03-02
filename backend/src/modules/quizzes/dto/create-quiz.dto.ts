@@ -4,10 +4,10 @@ import { QuizType } from '@prisma/client';
 
 export class CreateQuizDto {
   @IsString()
-  title: string;
+  title!: string;
 
   @IsString()
-  slug: string;
+  slug!: string;
 
   @IsOptional()
   @IsString()

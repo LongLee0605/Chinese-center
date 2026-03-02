@@ -33,14 +33,14 @@ export default function PostForm() {
     if (!isNew && id) {
       postsApi
         .get(id)
-        .then((p: any) =>
+        .then((p: Record<string, unknown>) =>
           setForm({
-            title: p.title ?? '',
-            slug: p.slug ?? '',
-            excerpt: p.excerpt ?? '',
-            body: bodyHtmlForDisplay(p.body ?? ''),
-            coverImage: p.coverImage ?? '',
-            status: p.status ?? 'DRAFT',
+            title: String(p.title ?? ''),
+            slug: String(p.slug ?? ''),
+            excerpt: String(p.excerpt ?? ''),
+            body: bodyHtmlForDisplay(String(p.body ?? '')),
+            coverImage: String(p.coverImage ?? ''),
+            status: String(p.status ?? 'DRAFT'),
           })
         )
         .catch(console.error)
@@ -81,7 +81,7 @@ export default function PostForm() {
         show('success', isNew ? 'Đã tạo bài viết.' : 'Đã lưu bài viết.');
         navigate('/posts');
       })
-      .catch((e: any) => show('error', e?.message || 'Lưu thất bại.'))
+      .catch((e: unknown) => show('error', e instanceof Error ? e.message : 'Lưu thất bại.'))
       .finally(() => setSaving(false));
   }
 

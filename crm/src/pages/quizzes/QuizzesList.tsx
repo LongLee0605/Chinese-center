@@ -31,8 +31,8 @@ export default function QuizzesList() {
       await quizzesApi.delete(id);
       setData((d) => (d ? { ...d, items: d.items.filter((q) => q.id !== id), total: d.total - 1 } : null));
       show('success', 'Đã xóa bài test.');
-    } catch (e: any) {
-      show('error', e?.message || 'Xóa thất bại.');
+    } catch (e: unknown) {
+      show('error', e instanceof Error ? e.message : 'Xóa thất bại.');
     }
   }
 

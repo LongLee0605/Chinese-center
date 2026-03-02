@@ -25,8 +25,8 @@ export default function PostsList() {
       await postsApi.delete(id);
       setData((d) => d ? { ...d, items: d.items.filter((p) => p.id !== id), total: d.total - 1 } : null);
       show('success', 'Đã xóa bài viết.');
-    } catch (e: any) {
-      show('error', e?.message || 'Xóa thất bại.');
+    } catch (e: unknown) {
+      show('error', e instanceof Error ? e.message : 'Xóa thất bại.');
     }
   }
 

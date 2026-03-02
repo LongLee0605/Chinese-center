@@ -4,17 +4,17 @@ import { QuestionType } from '@prisma/client';
 
 export class CreateQuestionDto {
   @IsEnum(QuestionType)
-  type: QuestionType;
+  type!: QuestionType;
 
   @IsString()
-  questionText: string;
+  questionText!: string;
 
   @IsOptional()
   @IsArray()
   options?: string[]; // for MULTIPLE_CHOICE: ["A", "B", "C", "D"]
 
   @IsString()
-  correctAnswer: string;
+  correctAnswer!: string;
 
   @IsOptional()
   @Type(() => Number)

@@ -17,8 +17,8 @@ export default function Login() {
     try {
       await login(email, password);
       requestAnimationFrame(() => navigate('/', { replace: true }));
-    } catch (err: any) {
-      setError(err?.message || 'Đăng nhập thất bại');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
     } finally {
       setLoading(false);
     }

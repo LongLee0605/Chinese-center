@@ -31,8 +31,8 @@ export default function CoursesList() {
       await coursesApi.delete(id);
       setData((d) => (d ? { ...d, items: d.items.filter((c) => c.id !== id), total: d.total - 1 } : null));
       show('success', 'Đã xóa khóa học.');
-    } catch (e: any) {
-      show('error', e?.message || 'Xóa thất bại.');
+    } catch (e: unknown) {
+      show('error', e instanceof Error ? e.message : 'Xóa thất bại.');
     }
   }
 

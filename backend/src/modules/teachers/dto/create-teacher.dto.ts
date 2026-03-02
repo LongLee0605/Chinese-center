@@ -2,7 +2,7 @@ import { IsString, IsOptional, IsBoolean, IsInt, IsArray, Min } from 'class-vali
 
 export class CreateTeacherDto {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()

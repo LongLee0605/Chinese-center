@@ -3,11 +3,13 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 export type ToastType = 'success' | 'error' | 'info';
 type Toast = { id: number; type: ToastType; message: string };
 
-const ToastContext = createContext<{
+type ToastContextValue = {
   toasts: Toast[];
   show: (type: ToastType, message: string) => void;
   remove: (id: number) => void;
-}>(null as any);
+};
+
+const ToastContext = createContext<ToastContextValue | null>(null);
 
 let nextId = 0;
 

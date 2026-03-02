@@ -3,16 +3,16 @@ import { LeadType } from '@prisma/client';
 
 export class CreateLeadDto {
   @IsEnum(LeadType)
-  type: LeadType;
+  type!: LeadType;
 
   @IsString()
-  name: string;
+  name!: string;
 
   @IsString()
-  email: string;
+  email!: string;
 
   @IsString()
-  phone: string;
+  phone!: string;
 
   @IsOptional()
   @IsString()

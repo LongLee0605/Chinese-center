@@ -4,13 +4,13 @@ import { LessonType } from '@prisma/client';
 
 export class CreateLessonDto {
   @IsString()
-  courseId: string;
+  courseId!: string;
 
   @IsString()
-  title: string;
+  title!: string;
 
   @IsString()
-  slug: string;
+  slug!: string;
 
   @IsOptional()
   @Type(() => Number)

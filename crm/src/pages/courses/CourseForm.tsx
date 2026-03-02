@@ -29,8 +29,8 @@ export default function CourseForm() {
       const c = await coursesApi.create(form) as { id: string };
       show('success', 'Đã tạo khóa học.');
       navigate(`/courses/${c.id}`);
-    } catch (err: any) {
-      show('error', err?.message || 'Tạo khóa học thất bại.');
+    } catch (err: unknown) {
+      show('error', err instanceof Error ? err.message : 'Tạo khóa học thất bại.');
     } finally {
       setSaving(false);
     }

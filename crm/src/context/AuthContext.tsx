@@ -4,12 +4,14 @@ import { authApi } from '../api/client';
 
 type User = { id: string; email: string; firstName: string; lastName: string; role: string } | null;
 
-const AuthContext = createContext<{
+type AuthContextValue = {
   user: User;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-}>(null as any);
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);

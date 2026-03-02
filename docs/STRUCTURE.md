@@ -72,7 +72,14 @@ npm run dev      # http://localhost:5174 hoặc port khác
 
 ---
 
-## 4. Tóm tắt
+## 4. Quy ước code (conventions)
+
+- **Website:** path alias `@/*` → `src/*`; lib trong `src/lib`, barrel `@/lib`.
+- **CRM:** path alias `@/*` → `src/*`; API `src/api/client.ts`, utils `src/lib/utils.ts` (cn, errorMessage).
+- **Backend:** NestJS strict, path `@/*`; module theo domain, DTO + class-validator.
+- **Catch:** dùng `unknown`, kiểm tra `err instanceof Error` khi lấy message.
+
+## 5. Tóm tắt
 
 - **Backend** = một ứng dụng độc lập trong `backend/`.
 - **Website** = ứng dụng ở thư mục gốc; **CRM** = ứng dụng trong `crm/`.
