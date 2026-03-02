@@ -13,7 +13,6 @@ export default function Mail() {
   const navigate = useNavigate();
   const { show } = useToast();
   const [view, setView] = useState<View>('compose');
-  const [configOk, setConfigOk] = useState<boolean | null>(null);
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -37,10 +36,8 @@ export default function Mail() {
   const checkConfig = async () => {
     try {
       const res = await mailApi.check();
-      setConfigOk(res.configured);
       show(res.configured ? 'success' : 'info', res.configured ? 'SMTP đã cấu hình.' : 'Chưa cấu hình SMTP. Khi gửi sẽ báo lỗi.');
     } catch {
-      setConfigOk(false);
       show('error', 'Không kết nối được backend.');
     }
   };
