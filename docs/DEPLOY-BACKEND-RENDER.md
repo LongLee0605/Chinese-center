@@ -92,6 +92,19 @@ Lưu lại URL dạng:
 
    **Lưu ý**: Không set `PORT`. Render tự gán biến `PORT`; backend đã dùng `process.env.PORT || 4000`.
 
+   **Gửi email từ CRM (tùy chọn):** Nếu muốn dùng chức năng **Gửi email** trong CRM và nhận thông báo khi có đăng ký từ website, thêm các biến sau (nếu không thêm, CRM sẽ báo "SMTP chưa cấu hình" và không gửi được mail):
+
+   | Key | Value |
+   |-----|--------|
+   | `SMTP_HOST` | Host SMTP (vd: `smtp.gmail.com`) |
+   | `SMTP_PORT` | `587` (TLS) hoặc `465` (SSL) |
+   | `SMTP_USER` | Email đăng nhập SMTP |
+   | `SMTP_PASS` | Mật khẩu ứng dụng / mật khẩu SMTP |
+   | `SMTP_FROM` | (Tùy chọn) Địa chỉ hiển thị người gửi |
+   | `LEAD_OWNER_EMAIL` | (Tùy chọn) Email nhận thông báo khi có lead từ form website |
+
+   Sau khi thêm hoặc sửa Environment Variables, bấm **Save** và chờ Render **redeploy** (hoặc **Manual Deploy**) thì backend mới đọc biến mới.
+
 5. Bấm **Create Web Service**.
 
 ---

@@ -186,7 +186,7 @@ Khi chạy xong, mở trình duyệt: **http://localhost:5174**
    - Có thể chỉnh **Cài đặt bài test**: Loại bài test, thời gian (phút), Điểm đạt (%), bật **Xuất bản**
 
 6. **Gửi email**
-   - **Gửi email** (menu) → nhập Người nhận (nhiều email cách nhau bằng dấu phẩy), Tiêu đề, Nội dung → **Gửi email**. Cần cấu hình SMTP trong `backend/.env` (SMTP_HOST, SMTP_USER, SMTP_PASS).
+   - **Gửi email** (menu) → nhập Người nhận (nhiều email cách nhau bằng dấu phẩy), Tiêu đề, Nội dung → **Gửi email**. Cần cấu hình SMTP trong `backend/.env` (SMTP_HOST, SMTP_USER, SMTP_PASS). Nếu chưa cấu hình, trang Mail sẽ báo "SMTP chưa cấu hình" — các chức năng khác của CRM vẫn dùng bình thường.
 
 ---
 

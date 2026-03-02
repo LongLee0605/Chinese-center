@@ -38,16 +38,12 @@ export default function Mail() {
     try {
       const res = await mailApi.check();
       setConfigOk(res.configured);
-      if (!res.configured) show('info', 'Chưa cấu hình SMTP trong backend (.env).');
+      show(res.configured ? 'success' : 'info', res.configured ? 'SMTP đã cấu hình.' : 'Chưa cấu hình SMTP. Khi gửi sẽ báo lỗi.');
     } catch {
       setConfigOk(false);
-      show('error', 'Không kiểm tra được cấu hình mail.');
+      show('error', 'Không kết nối được backend.');
     }
   };
-
-  useEffect(() => {
-    if (configOk === null) checkConfig();
-  }, []);
 
   useEffect(() => {
     if (view === 'list') {
@@ -164,22 +160,16 @@ export default function Mail() {
   return (
     <div className="crm-page max-w-4xl">
       <h1 className="text-2xl font-bold mb-2">Gửi email</h1>
-      <p className="text-gray-600 text-sm mb-4">
-        Gửi email từ CRM. Cần cấu hình SMTP trong <code className="bg-gray-200 px-1">backend/.env</code> (SMTP_HOST, SMTP_USER, SMTP_PASS).
+      <p className="text-slate-600 text-sm mb-2">
+        Gửi email từ CRM. Nếu chưa cấu hình SMTP trong backend (local: .env; Render: Environment), khi gửi sẽ báo lỗi.
       </p>
-
-      {configOk === null && (
-        <button
-          type="button"
-          onClick={checkConfig}
-          className="mb-4 px-3 py-1 text-sm border rounded hover:bg-gray-100"
-        >
-          Kiểm tra cấu hình SMTP
-        </button>
-      )}
-      {configOk === false && (
-        <p className="mb-4 text-amber-700 text-sm">SMTP chưa cấu hình. Cấu hình xong cần khởi động lại backend.</p>
-      )}
+      <button
+        type="button"
+        onClick={checkConfig}
+        className="mb-4 px-3 py-1.5 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-600"
+      >
+        Kiểm tra SMTP
+      </button>
 
       <div className="flex gap-2 mb-4 border-b">
         <button
@@ -229,7 +219,7 @@ export default function Mail() {
           </div>
           <button
             type="submit"
-            disabled={sending || configOk === false}
+            disabled={sending}
             className="crm-btn-primary disabled:opacity-50"
           >
             <Send size={18} />
