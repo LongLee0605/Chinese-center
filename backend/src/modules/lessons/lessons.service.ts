@@ -20,6 +20,7 @@ export class LessonsService {
         type: dto.type ?? 'DOCUMENT',
         videoUrl: dto.videoUrl,
         isPublished: dto.isPublished ?? false,
+        isFreePreview: dto.isFreePreview ?? false,
       },
     });
   }
@@ -66,6 +67,7 @@ export class LessonsService {
         ...(dto.type != null && { type: dto.type }),
         ...(dto.videoUrl != null && { videoUrl: dto.videoUrl }),
         ...(dto.isPublished != null && { isPublished: dto.isPublished }),
+        ...(dto.isFreePreview != null && { isFreePreview: dto.isFreePreview }),
       },
     });
   }

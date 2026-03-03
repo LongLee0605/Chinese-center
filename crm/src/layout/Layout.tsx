@@ -1,6 +1,8 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FileText, BookOpen, ClipboardList, LayoutDashboard, LogOut, Mail, Inbox, LayoutGrid, UserCog } from 'lucide-react';
+import { FileText, BookOpen, ClipboardList, LayoutDashboard, LogOut, Mail, Inbox, LayoutGrid, UserCog, UserPlus } from 'lucide-react';
+import NotificationsBell from '../components/NotificationsBell';
+import GlobalSearch from '../components/GlobalSearch';
 
 function getNav(role: string) {
   const base = [
@@ -19,6 +21,7 @@ function getNav(role: string) {
       { to: '/courses', label: 'Khóa học', icon: BookOpen },
       { to: '/quizzes', label: 'Bài test', icon: ClipboardList },
       { to: '/leads', label: 'Email đăng ký', icon: Inbox },
+      { to: '/trial-registrations', label: 'Học thử', icon: UserPlus },
       { to: '/mail', label: 'Gửi email', icon: Mail },
     ];
   }
@@ -30,10 +33,14 @@ function getNav(role: string) {
       { to: '/courses', label: 'Khóa học', icon: BookOpen },
       { to: '/quizzes', label: 'Bài test', icon: ClipboardList },
       { to: '/leads', label: 'Email đăng ký', icon: Inbox },
+      { to: '/trial-registrations', label: 'Học thử', icon: UserPlus },
       { to: '/mail', label: 'Gửi email', icon: Mail },
     ];
   }
-  return base;
+  return [
+    ...base,
+    { to: '/trial-registrations', label: 'Học thử', icon: UserPlus },
+  ];
 }
 
 function getInitials(firstName?: string, lastName?: string): string {
@@ -102,8 +109,14 @@ export default function Layout() {
           </button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0 overflow-auto">
-        <Outlet />
+      <main className="flex-1 min-w-0 overflow-auto flex flex-col">
+        <header className="flex-shrink-0 flex items-center justify-between gap-4 h-14 px-4 bg-white border-b border-slate-200">
+          <GlobalSearch />
+          <NotificationsBell />
+        </header>
+        <div className="flex-1 min-h-0 overflow-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

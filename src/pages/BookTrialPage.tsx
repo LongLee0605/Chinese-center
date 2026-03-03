@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Send } from 'lucide-react';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import SectionTitle from '@/components/ui/SectionTitle';
 import Button from '@/components/ui/Button';
-import { useSubmitLeadMutation } from '@/store/apiSlice';
+import { useSubmitLeadMutation, useSubmitTrialRegistrationMutation } from '@/store/apiSlice';
 
 const COURSE_OPTIONS = [
   { value: 'hsk1', label: 'HSK 1 - Nhập môn' },
@@ -23,9 +23,38 @@ const TIME_OPTIONS = [
 ];
 
 export default function BookTrialPage() {
+  const [searchParams] = useSearchParams();
+  const courseSlug = searchParams.get('courseSlug')?.trim() || undefined;
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
-  const [submitLead, { isLoading: submitting }] = useSubmitLeadMutation();
+  const [submitLead, { isLoading: submittingLead }] = useSubmitLeadMutation();
+  const [submitTrialRegistration, { isLoading: submittingTrial }] = useSubmitTrialRegistrationMutation();
+  const submitting = submittingLead || submittingTrial;
+
+  const handleSubmitTrial = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!courseSlug) return;
+    setError('');
+    const form = e.currentTarget;
+    const fullName = (form.querySelector('[name="fullName"]') as HTMLInputElement)?.value?.trim();
+    const phone = (form.querySelector('[name="phone"]') as HTMLInputElement)?.value?.trim();
+    const email = (form.querySelector('[name="email"]') as HTMLInputElement)?.value?.trim();
+    const message = (form.querySelector('[name="message"]') as HTMLTextAreaElement)?.value?.trim();
+    if (!fullName || !email) return;
+    try {
+      await submitTrialRegistration({
+        email,
+        fullName,
+        phone: phone || undefined,
+        courseSlug,
+        message: message || undefined,
+      }).unwrap();
+      setSent(true);
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'data' in err && (err as { data?: { message?: string } }).data?.message;
+      setError(msg || (err instanceof Error ? err.message : 'Gửi thất bại. Vui lòng thử lại.'));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,9 +90,11 @@ export default function BookTrialPage() {
       <section className="section-padding">
         <div className="container-narrow">
           <SectionTitle
-            overline="Miễn phí 1 buổi"
+            overline={courseSlug ? 'Xem thử khóa học' : 'Miễn phí 1 buổi'}
             title="Đăng ký học thử"
-            subtitle="Điền form bên dưới, chúng tôi sẽ xếp lịch học thử 1 buổi miễn phí và gọi lại xác nhận trong 24 giờ."
+            subtitle={courseSlug
+              ? 'Điền form bên dưới. Khi được duyệt, bạn sẽ nhận tài khoản xem khóa học này trong 24 giờ. Sau 24h cần liên hệ để mua khóa hoặc gia hạn.'
+              : 'Điền form bên dưới, chúng tôi sẽ xếp lịch học thử 1 buổi miễn phí và gọi lại xác nhận trong 24 giờ.'}
           />
 
           <motion.div
@@ -76,12 +107,45 @@ export default function BookTrialPage() {
               <div className="text-center py-8 sm:py-12">
                 <p className="text-lg font-semibold text-accent-600">Đăng ký thành công!</p>
                 <p className="mt-2 text-primary-600 max-w-md mx-auto">
-                  Chúng tôi sẽ liên hệ trong vòng 24 giờ để xếp lịch học thử cho bạn.
+                  {courseSlug
+                    ? 'Yêu cầu của bạn đã được gửi. Giảng viên sẽ xem xét và cấp tài khoản xem thử (24h) nếu được duyệt.'
+                    : 'Chúng tôi sẽ liên hệ trong vòng 24 giờ để xếp lịch học thử cho bạn.'}
                 </p>
-                <Link to="/khoa-hoc" className="mt-6 inline-block">
-                  <Button variant="outline">Xem khóa học</Button>
+                <Link to={courseSlug ? `/khoa-hoc/${courseSlug}` : '/khoa-hoc'} className="mt-6 inline-block">
+                  <Button variant="outline">{courseSlug ? 'Về trang khóa học' : 'Xem khóa học'}</Button>
                 </Link>
               </div>
+            ) : courseSlug ? (
+              <form onSubmit={handleSubmitTrial} className="space-y-5 sm:space-y-6">
+                {error && (
+                  <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+                )}
+                <p className="text-sm text-primary-600 bg-primary-50 px-3 py-2 rounded-lg">
+                  Khóa học: <strong>{courseSlug}</strong>
+                </p>
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label htmlFor="trial-fullName" className="block text-sm font-medium text-primary-900 mb-1.5">Họ tên *</label>
+                    <input id="trial-fullName" name="fullName" type="text" required className="w-full rounded-lg border border-primary-300 px-4 py-3 text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500 min-h-[44px]" placeholder="Nguyễn Văn A" />
+                  </div>
+                  <div>
+                    <label htmlFor="trial-phone" className="block text-sm font-medium text-primary-900 mb-1.5">Số điện thoại</label>
+                    <input id="trial-phone" name="phone" type="tel" className="w-full rounded-lg border border-primary-300 px-4 py-3 text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500 min-h-[44px]" placeholder="0901234567" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="trial-email" className="block text-sm font-medium text-primary-900 mb-1.5">Email *</label>
+                  <input id="trial-email" name="email" type="email" required className="w-full rounded-lg border border-primary-300 px-4 py-3 text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500 min-h-[44px]" placeholder="email@example.com" />
+                </div>
+                <div>
+                  <label htmlFor="trial-message" className="block text-sm font-medium text-primary-900 mb-1.5">Ghi chú</label>
+                  <textarea id="trial-message" name="message" rows={3} className="w-full rounded-lg border border-primary-300 px-4 py-3 text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500" placeholder="Trình độ hiện tại, mục tiêu học..." />
+                </div>
+                <Button type="submit" size="lg" className="w-full sm:w-auto group" disabled={submittingTrial}>
+                  {submittingTrial ? 'Đang gửi...' : 'Gửi yêu cầu xem thử'}
+                  <Send className="ml-2 h-5 w-5 inline-block group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </form>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
                 {error && (

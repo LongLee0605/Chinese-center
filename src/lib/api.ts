@@ -11,9 +11,16 @@ export function getApiBase(): string {
   return API_BASE;
 }
 
-/** Gốc URL để build đường dẫn upload (avatar, v.v.). */
+/** Gốc URL để build đường dẫn upload (avatar, cover, thumbnail). Luôn trùng với API để tránh lỗi ảnh local/production. */
 export function getUploadsBase(): string {
   return API_BASE.replace(/\/api\/v1\/?$/, '');
+}
+
+/** Build URL ảnh từ path lưu trong DB. Không lưu full URL trong DB — chỉ path (vd: posts/xxx.jpg). */
+export function toImageUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${getUploadsBase()}/uploads/${path}`;
 }
 
 const UPLOADS_PLACEHOLDER = '__UPLOADS__/';
@@ -116,12 +123,19 @@ export type QuizPublic = {
 };
 
 export type QuizSubmitResult = {
-  score: number;
+  score: number | null;
   mcCorrect: number;
   mcTotal: number;
   totalQuestions: number;
   hasEssayPending: boolean;
   passed: boolean;
+  attemptNumber?: number;
+};
+
+export type QuizMyAttemptsSummary = {
+  attemptsCount: number;
+  latestScore: number | null;
+  latestSubmittedAt: string | null;
 };
 
 export type QuizListItem = {
@@ -145,6 +159,8 @@ export const quizzesApi = {
     );
   },
   getBySlug: (slug: string) => api<QuizPublic>(`/quizzes/by-slug/${slug}`),
+  getMyAttempts: (quizId: string) =>
+    api<QuizMyAttemptsSummary>(`/quizzes/${quizId}/my-attempts`),
   submitAttempt: (
     quizId: string,
     body: { answers: Record<string, string>; guestName?: string; guestEmail?: string },

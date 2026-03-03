@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { coursesApi, bodyHtmlForSave, bodyHtmlForDisplay } from '../../api/client';
+import { coursesApi, bodyHtmlForSave, bodyHtmlForDisplay, toImageUrl } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ImagePlus } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
 
 const LEVEL_OPTIONS = [
@@ -30,9 +30,11 @@ export default function CourseForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { show } = useToast();
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const isNew = id === 'new' || !id;
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [form, setForm] = useState({
     code: '',
     name: '',
@@ -86,6 +88,26 @@ export default function CourseForm() {
         .finally(() => setLoading(false));
     }
   }, [id, isNew, show]);
+
+  async function handleThumbnailChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^image\/(jpeg|png|gif|webp)$/i.test(file.type)) {
+      show('error', 'Chỉ chấp nhận ảnh (JPEG, PNG, GIF, WebP).');
+      return;
+    }
+    setUploadingThumbnail(true);
+    try {
+      const { path } = await coursesApi.uploadImage(file);
+      setForm((f) => ({ ...f, thumbnail: path }));
+      show('success', 'Đã tải ảnh bìa lên.');
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Tải ảnh lên thất bại.');
+    } finally {
+      setUploadingThumbnail(false);
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,13 +333,40 @@ export default function CourseForm() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh bìa (URL)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh bìa khóa học</label>
             <input
-              value={form.thumbnail}
-              onChange={(e) => setForm((f) => ({ ...f, thumbnail: e.target.value }))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              placeholder="https://..."
+              type="file"
+              ref={thumbnailInputRef}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              className="hidden"
+              onChange={handleThumbnailChange}
             />
+            {form.thumbnail && (
+              <div className="mb-3 relative inline-block">
+                <img
+                  src={toImageUrl(form.thumbnail)}
+                  alt="Bìa khóa học"
+                  className="max-h-40 rounded-lg border border-gray-200 object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, thumbnail: '' }))}
+                  className="absolute top-1 right-1 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                >
+                  Xóa ảnh
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => thumbnailInputRef.current?.click()}
+              disabled={uploadingThumbnail}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
+            >
+              <ImagePlus size={18} />
+              {uploadingThumbnail ? 'Đang tải lên...' : form.thumbnail ? 'Đổi ảnh bìa' : 'Tải ảnh bìa lên'}
+            </button>
           </div>
         </section>
 

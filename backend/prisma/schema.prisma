@@ -75,8 +75,58 @@ model User {
 
   posts            Post[]
   quizAttempts     QuizAttempt[]
-  courseEnrollments CourseEnrollment[]
-  lessonProgress   LessonProgress[]
+  courseEnrollments     CourseEnrollment[]
+  lessonProgress       LessonProgress[]
+  enrollmentRequests   CourseEnrollmentRequest[]
+  isTrial              Boolean   @default(false)
+  trialExpiresAt       DateTime?
+}
+
+// Yêu cầu đăng ký khóa học (người dùng đã đăng nhập gửi, admin/giảng viên duyệt)
+enum EnrollmentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model CourseEnrollmentRequest {
+  id          String                 @id @default(cuid())
+  userId      String
+  courseId    String
+  status      EnrollmentRequestStatus @default(PENDING)
+  note        String?                @db.Text
+  requestedAt DateTime              @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@index([status])
+  @@map("course_enrollment_requests")
+}
+
+// Đăng ký học thử (khách chưa đăng nhập); khi duyệt tạo tài khoản tạm 24h
+model TrialRegistration {
+  id             String                 @id @default(cuid())
+  email          String
+  fullName       String
+  phone          String?
+  courseId       String
+  message        String?                @db.Text
+  status         EnrollmentRequestStatus @default(PENDING)
+  requestedAt    DateTime              @default(now())
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  createdUserId  String?                // User tạo khi duyệt (tài khoản học thử)
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([status])
+  @@map("trial_registrations")
 }
 
 // Khóa học đã mua / đăng ký (học viên)
@@ -156,9 +206,11 @@ model Course {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  lessons    Lesson[]
-  quizzes    Quiz[]
-  enrollments CourseEnrollment[]
+  lessons                  Lesson[]
+  quizzes                  Quiz[]
+  enrollments              CourseEnrollment[]
+  enrollmentRequests       CourseEnrollmentRequest[]
+  trialRegistrations       TrialRegistration[]
 }
 
 model Lesson {
@@ -172,6 +224,7 @@ model Lesson {
   type            LessonType @default(DOCUMENT)
   videoUrl        String?
   isPublished     Boolean    @default(false)
+  isFreePreview   Boolean    @default(false) // true = xem miễn phí; false = cần đăng ký khóa học
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 

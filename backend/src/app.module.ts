@@ -11,6 +11,10 @@ import { MailModule } from './modules/mail/mail.module';
 import { LeadsModule } from './modules/leads/leads.module';
 import { TeachersModule } from './modules/teachers/teachers.module';
 import { UsersModule } from './modules/users/users.module';
+import { EnrollmentRequestsModule } from './modules/enrollment-requests/enrollment-requests.module';
+import { TrialRegistrationsModule } from './modules/trial-registrations/trial-registrations.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   controllers: [HealthController],
@@ -26,6 +30,10 @@ import { UsersModule } from './modules/users/users.module';
     LeadsModule,
     TeachersModule,
     UsersModule,
+    EnrollmentRequestsModule,
+    TrialRegistrationsModule,
+    NotificationsModule,
+    SearchModule,
   ],
 })
 export class AppModule {}

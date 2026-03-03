@@ -2,14 +2,8 @@ import { useParams, Link } from 'react-router-dom';
 import { Calendar, ArrowLeft } from 'lucide-react';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import { useGetPostBySlugQuery } from '@/store/apiSlice';
-import { getUploadsBase, bodyHtmlForDisplay } from '@/lib/api';
+import { toImageUrl, bodyHtmlForDisplay } from '@/lib/api';
 import { bodyLooksLikeHtml, plainTextToHtml } from '@/lib/utils';
-
-function postCoverUrl(coverImage: string | null | undefined): string {
-  if (!coverImage) return '';
-  if (coverImage.startsWith('http')) return coverImage;
-  return `${getUploadsBase()}/uploads/${coverImage}`;
-}
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -51,7 +45,7 @@ export default function BlogPostPage() {
             {post.coverImage && (
               <div className="rounded-xl overflow-hidden mb-6 bg-primary-100">
                 <img
-                  src={postCoverUrl(post.coverImage)}
+                  src={toImageUrl(post.coverImage)}
                   alt=""
                   className="w-full h-auto max-h-[420px] object-cover"
                 />

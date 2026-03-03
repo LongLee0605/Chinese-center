@@ -25,6 +25,8 @@ export const apiSlice = createApi({
         status: string;
         enrollments?: { courseId: string; courseName: string; courseSlug: string; enrolledAt: string; totalLessons: number; completedLessons: number; percentProgress: number }[];
         quizAttempts?: { id: string; quizId: string; quizTitle: string; quizSlug: string; score: number | null; submittedAt: string | null }[];
+        isTrial?: boolean;
+        trialExpiresAt?: string | null;
       },
       void
     >({
@@ -63,6 +65,9 @@ export const apiSlice = createApi({
         level: string;
         duration: number;
         price?: number;
+        enrolled?: boolean;
+        trialExpired?: boolean;
+        enrollmentRequestStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
         lessons: {
           id: string;
           title: string;
@@ -72,6 +77,16 @@ export const apiSlice = createApi({
           type: string;
           content?: string | null;
           videoUrl?: string | null;
+          isFreePreview?: boolean;
+          locked?: boolean;
+          quizzes?: {
+            id: string;
+            title: string;
+            slug: string;
+            description?: string | null;
+            quizType: string;
+            questions: { id: string; type: string; questionText: string; options: string[] | null; orderIndex: number }[];
+          }[];
         }[];
       },
       string
@@ -93,6 +108,21 @@ export const apiSlice = createApi({
         body,
       }),
     }),
+    submitEnrollmentRequest: builder.mutation<{ id: string }, { courseId: string }>({
+      query: (body) => ({
+        url: '/enrollment-requests',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _err, arg) => [{ type: 'Course', id: undefined }],
+    }),
+    submitTrialRegistration: builder.mutation<{ id: string }, { email: string; fullName: string; phone?: string; courseSlug: string; message?: string }>({
+      query: (body) => ({
+        url: '/trial-registrations',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -104,4 +134,6 @@ export const {
   useGetTeachersQuery,
   useSubmitLeadMutation,
   useGetMeQuery,
+  useSubmitEnrollmentRequestMutation,
+  useSubmitTrialRegistrationMutation,
 } = apiSlice;

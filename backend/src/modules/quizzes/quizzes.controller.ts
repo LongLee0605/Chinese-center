@@ -48,15 +48,25 @@ export class QuizzesController {
     return this.quizzes.findBySlug(slug, role);
   }
 
+  @Get(':id/my-attempts')
+  @UseGuards(OptionalJwtAuthGuard)
+  getMyAttempts(
+    @Request() req: { user?: { sub?: string } },
+    @Param('id') id: string,
+  ) {
+    return this.quizzes.getMyAttemptsSummary(id, req.user?.sub ?? null);
+  }
+
   @Post(':id/attempt')
   @UseGuards(OptionalJwtAuthGuard)
   submitAttempt(
-    @Request() req: { user?: { role?: string } },
+    @Request() req: { user?: { sub?: string; role?: string } },
     @Param('id') id: string,
     @Body() dto: SubmitAttemptDto,
   ) {
     const role = req.user?.role ?? null;
     return this.quizzes.submitAttempt(id, dto.answers, {
+      userId: req.user?.sub ?? undefined,
       guestName: dto.guestName,
       guestEmail: dto.guestEmail,
       userRole: role,

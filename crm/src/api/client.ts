@@ -23,6 +23,13 @@ export function avatarUrl(avatarPath: string | null | undefined): string {
   return `${getUploadsBase()}/uploads/${avatarPath}`;
 }
 
+/** Build URL ảnh từ path (cover, thumbnail, ...). Luôn dùng base hiện tại để tránh lỗi local/production. */
+export function toImageUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${getUploadsBase()}/uploads/${path}`;
+}
+
 /** Placeholder lưu trong DB thay cho full URL ảnh (tránh localhost khi xem production). */
 export const UPLOADS_PLACEHOLDER = '__UPLOADS__/';
 
@@ -129,6 +136,128 @@ export const coursesApi = {
   update: (id: string, body: Record<string, unknown>) =>
     api<unknown>(`/courses/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (id: string) => api<unknown>(`/courses/${id}`, { method: 'DELETE' }),
+  getEnrollments: (courseId: string) =>
+    api<Array<{ id: string; userId: string; enrolledAt: string; user: { id: string; email: string; firstName: string; lastName: string } }>>(`/courses/${courseId}/enrollments`),
+  addEnrollment: (courseId: string, userId: string) =>
+    api<unknown>(`/courses/${courseId}/enrollments`, { method: 'POST', body: JSON.stringify({ userId }) }),
+  removeEnrollment: (courseId: string, enrollmentId: string) =>
+    api<unknown>(`/courses/${courseId}/enrollments/${enrollmentId}`, { method: 'DELETE' }),
+  uploadImage: async (file: File): Promise<{ path: string }> => {
+    const token = getToken();
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${API_BASE}/courses/upload-image`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (res.status === 401) {
+      localStorage.removeItem('crm_token');
+      localStorage.removeItem('crm_user');
+      window.location.href = '/login';
+      throw new Error('Unauthorized');
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error((err as { message?: string }).message || 'Upload thất bại');
+    }
+    return res.json();
+  },
+};
+
+export const enrollmentRequestsApi = {
+  list: (params?: { courseId?: string; status?: string; page?: number; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.courseId) q.set('courseId', params.courseId);
+    if (params?.status) q.set('status', params.status);
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    return api<{ items: EnrollmentRequest[]; total: number; page: number; limit: number }>(`/enrollment-requests?${q}`);
+  },
+  create: (courseId: string) =>
+    api<EnrollmentRequest>('/enrollment-requests', { method: 'POST', body: JSON.stringify({ courseId }) }),
+  review: (id: string, body: { status: 'APPROVED' | 'REJECTED'; note?: string }) =>
+    api<EnrollmentRequest>(`/enrollment-requests/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+};
+
+export type EnrollmentRequest = {
+  id: string;
+  userId: string;
+  courseId: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  note?: string | null;
+  requestedAt: string;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
+  user: { id: string; email: string; firstName: string; lastName: string; phone?: string | null };
+  course: { id: string; name: string; slug: string };
+};
+
+export const trialRegistrationsApi = {
+  list: (params?: { courseId?: string; status?: string; page?: number; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.courseId) q.set('courseId', params.courseId);
+    if (params?.status) q.set('status', params.status);
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    return api<{ items: TrialRegistration[]; total: number; page: number; limit: number }>(`/trial-registrations?${q}`);
+  },
+  review: (id: string, body: { status: 'APPROVED' | 'REJECTED'; note?: string }) =>
+    api<TrialRegistration>(`/trial-registrations/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+};
+
+export type TrialRegistration = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone?: string | null;
+  courseId: string;
+  message?: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestedAt: string;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
+  createdUserId?: string | null;
+  course: { id: string; name: string; slug: string };
+};
+
+export type NotificationCounts = {
+  enrollmentRequestsPending: number;
+  trialPending: number;
+  leadsLast7Days: number;
+  total: number;
+};
+
+export const notificationsApi = {
+  getCounts: () => api<NotificationCounts>('/notifications/counts'),
+};
+
+export type SearchResult = {
+  posts: Array<{ id: string; title: string; slug: string; status: string }>;
+  courses: Array<{ id: string; name: string; code: string; slug: string }>;
+  quizzes: Array<{ id: string; title: string; slug: string }>;
+  leads: Array<{ id: string; type: string; name: string; email: string; createdAt: string }>;
+  trialRegistrations: Array<{ id: string; fullName: string; email: string; status: string; courseName?: string }>;
+  enrollmentRequests: Array<{
+    id: string;
+    status: string;
+    requestedAt: string;
+    userName: string;
+    userEmail: string;
+    courseId: string;
+    courseName: string;
+    courseSlug: string;
+  }>;
+  users: Array<{ id: string; email: string; firstName: string; lastName: string; role: string }>;
+};
+
+export const searchApi = {
+  search: (q: string, limit?: number) => {
+    const params = new URLSearchParams();
+    params.set('q', q);
+    if (limit != null) params.set('limit', String(limit));
+    return api<SearchResult>(`/search?${params}`);
+  },
 };
 
 export const lessonsApi = {
@@ -147,11 +276,12 @@ export const lessonsApi = {
 };
 
 export const quizzesApi = {
-  list: (params?: { page?: number; limit?: number; courseId?: string }) => {
+  list: (params?: { page?: number; limit?: number; courseId?: string; lessonId?: string }) => {
     const q = new URLSearchParams();
     if (params?.page) q.set('page', String(params.page));
     if (params?.limit) q.set('limit', String(params.limit));
     if (params?.courseId) q.set('courseId', params.courseId);
+    if (params?.lessonId) q.set('lessonId', params.lessonId);
     return api<{ items: unknown[]; total: number }>(`/quizzes?${q}`);
   },
   get: (id: string) => api<unknown>(`/quizzes/${id}`),

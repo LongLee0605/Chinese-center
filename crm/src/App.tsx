@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 import Mail from './pages/Mail';
 import LeadsList from './pages/leads/LeadsList';
 import LeadDetail from './pages/leads/LeadDetail';
+import TrialRegistrationsList from './pages/trial-registrations/TrialRegistrationsList';
 import AccountsList from './pages/accounts/AccountsList';
 import AccountForm from './pages/accounts/AccountForm';
 import AccountDetail from './pages/accounts/AccountDetail';
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="quizzes/:id" element={<QuizDetail />} />
           <Route path="leads" element={<LeadsList />} />
           <Route path="leads/:id" element={<LeadDetail />} />
+          <Route path="trial-registrations" element={<TrialRegistrationsList />} />
           <Route path="accounts" element={<AccountsList />} />
           <Route path="accounts/new" element={<AccountForm />} />
           <Route path="accounts/:id/edit" element={<AccountForm />} />

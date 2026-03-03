@@ -12,10 +12,28 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        status: true,
+        isTrial: true,
+        trialExpiresAt: true,
+      },
+    });
     if (!user || !user.password) return null;
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return null;
+    if (user.isTrial && user.trialExpiresAt && new Date() > user.trialExpiresAt) {
+      throw new UnauthorizedException(
+        'Tài khoản học thử đã hết hạn. Vui lòng liên hệ để mua khóa học hoặc gia hạn.',
+      );
+    }
     const { password: _, ...rest } = user;
     return rest;
   }

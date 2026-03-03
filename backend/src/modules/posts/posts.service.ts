@@ -4,6 +4,7 @@ import { PostStatus } from '@prisma/client';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { canAccessPost, type UserRoleOrGuest } from '../../core/visibility/visibility.util';
+import { normalizeImagePath } from '../../core/utils/image-path.util';
 
 @Injectable()
 export class PostsService {
@@ -15,13 +16,14 @@ export class PostsService {
       : dto.status === 'PUBLISHED'
         ? new Date()
         : null;
+    const coverImage = normalizeImagePath(dto.coverImage) ?? (/^https?:\/\//i.test(dto.coverImage ?? '') ? null : (dto.coverImage ?? null));
     return this.prisma.post.create({
       data: {
         title: dto.title,
         slug: dto.slug,
         excerpt: dto.excerpt,
         body: dto.body,
-        coverImage: dto.coverImage,
+        coverImage,
         status: dto.status ?? PostStatus.DRAFT,
         publishedAt,
         authorId,
@@ -98,6 +100,9 @@ export class PostsService {
   async update(id: string, dto: UpdatePostDto, userRole: UserRoleOrGuest) {
     await this.findOne(id, userRole);
     const publishedAt = dto.publishedAt != null ? new Date(dto.publishedAt) : undefined;
+    const coverImage = dto.coverImage != null
+      ? (normalizeImagePath(dto.coverImage) ?? (/^https?:\/\//i.test(dto.coverImage) ? null : dto.coverImage))
+      : undefined;
     return this.prisma.post.update({
       where: { id },
       data: {
@@ -105,7 +110,7 @@ export class PostsService {
         ...(dto.slug != null && { slug: dto.slug }),
         ...(dto.excerpt != null && { excerpt: dto.excerpt }),
         ...(dto.body != null && { body: dto.body }),
-        ...(dto.coverImage != null && { coverImage: dto.coverImage }),
+        ...(coverImage !== undefined && { coverImage }),
         ...(dto.status != null && { status: dto.status }),
         ...(publishedAt !== undefined && { publishedAt }),
         ...(dto.allowGuest !== undefined && { allowGuest: dto.allowGuest }),

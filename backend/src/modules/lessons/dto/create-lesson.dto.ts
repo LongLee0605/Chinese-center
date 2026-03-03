@@ -40,4 +40,9 @@ export class CreateLessonDto {
   @Type(() => Boolean)
   @IsBoolean()
   isPublished?: boolean;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isFreePreview?: boolean;
 }

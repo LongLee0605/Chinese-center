@@ -4,7 +4,8 @@ import Breadcrumb from '@/components/layout/Breadcrumb';
 import SectionTitle from '@/components/ui/SectionTitle';
 import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
-import { quizzesApi, type QuizPublic, type QuizSubmitResult } from '@/lib/api';
+import { quizzesApi, type QuizPublic, type QuizSubmitResult, type QuizMyAttemptsSummary } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 type AnswersState = Record<string, string>;
 
@@ -26,6 +27,7 @@ function validateGuestInfo(name: string, email: string): { name?: string; email?
 
 export default function QuizTestPage() {
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
   const [quiz, setQuiz] = useState<QuizPublic | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,8 @@ export default function QuizTestPage() {
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string }>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<QuizSubmitResult | null>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [attemptSummary, setAttemptSummary] = useState<QuizMyAttemptsSummary | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -52,6 +56,14 @@ export default function QuizTestPage() {
       })
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (user && quiz?.id) {
+      quizzesApi.getMyAttempts(quiz.id).then(setAttemptSummary).catch(() => setAttemptSummary(null));
+    } else {
+      setAttemptSummary(null);
+    }
+  }, [user, quiz?.id]);
 
   const mcQuestions = useMemo(
     () => quiz?.questions.filter((q) => q.type === 'MULTIPLE_CHOICE' || q.type === 'TRUE_FALSE') ?? [],
@@ -85,6 +97,10 @@ export default function QuizTestPage() {
       };
       const res = await quizzesApi.submitAttempt(quiz.id, body);
       setResult(res);
+      setShowResultModal(true);
+      if (user) {
+        quizzesApi.getMyAttempts(quiz.id).then(setAttemptSummary).catch(() => {});
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Nộp bài thất bại. Vui lòng thử lại.';
@@ -113,11 +129,44 @@ export default function QuizTestPage() {
 
           {!loading && !error && quiz && result && (
             <div className="mt-8">
+              {showResultModal && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="quiz-result-title"
+                >
+                  <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 sm:p-8">
+                    <h2 id="quiz-result-title" className="text-lg font-semibold text-primary-900 mb-4">
+                      Kết quả bài kiểm tra
+                    </h2>
+                    <p className="text-sm text-primary-700 mb-1">
+                      {result.attemptNumber != null && (
+                        <>Lần thử thứ <span className="font-semibold">{result.attemptNumber}</span>.</>
+                      )}
+                    </p>
+                    <p className="text-sm text-primary-700 mb-2">
+                      Điểm: <span className="font-semibold">{result.score != null ? `${result.score}%` : '—'}</span>
+                      {result.mcTotal > 0 && ` (${result.mcCorrect}/${result.mcTotal} câu đúng)`}.
+                    </p>
+                    <p className="text-sm font-medium text-primary-800 mb-2">
+                      {result.passed ? 'Đạt yêu cầu.' : 'Chưa đạt. Bạn có thể làm lại.'}
+                    </p>
+                    {result.hasEssayPending && (
+                      <p className="text-sm text-primary-600 mb-4">Phần tự luận sẽ được giáo viên chấm sau.</p>
+                    )}
+                    <Button type="button" onClick={() => setShowResultModal(false)} className="w-full">
+                      Đóng
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="rounded-2xl border border-accent-200 bg-accent-50 p-6 sm:p-8">
                 <h2 className="text-lg font-semibold text-accent-800 mb-2">Kết quả bài kiểm tra</h2>
-                <p className="text-sm text-accent-700 mb-4">
-                  Điểm phần trắc nghiệm: <span className="font-semibold">{result.score}%</span> (
-                  {result.mcCorrect}/{result.mcTotal} câu đúng).
+                <p className="text-sm text-accent-700 mb-2">
+                  {result.attemptNumber != null && <>Lần thử thứ <span className="font-semibold">{result.attemptNumber}</span>. </>}
+                  Điểm phần trắc nghiệm: <span className="font-semibold">{result.score != null ? `${result.score}%` : '—'}</span>
+                  {result.mcTotal > 0 && ` (${result.mcCorrect}/${result.mcTotal} câu đúng)`}.
                 </p>
                 <p className="text-sm text-accent-700 mb-2">
                   Trạng thái:{' '}
@@ -131,6 +180,13 @@ export default function QuizTestPage() {
                   </p>
                 )}
                 <div className="flex flex-wrap gap-3 mt-4">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setResult(null); setShowResultModal(false); setAnswers({}); }}
+                  >
+                    Làm lại
+                  </Button>
                   <Link to="/dang-ky-hoc-thu">
                     <Button size="sm">Đăng ký buổi tư vấn / học thử</Button>
                   </Link>
@@ -146,6 +202,15 @@ export default function QuizTestPage() {
 
           {!loading && !error && quiz && !result && (
             <form onSubmit={handleSubmit} className="mt-8 space-y-8">
+              {attemptSummary && attemptSummary.attemptsCount > 0 && (
+                <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4 text-sm text-primary-800">
+                  Đã thử <span className="font-semibold">{attemptSummary.attemptsCount}</span> lần.
+                  Điểm gần nhất:{' '}
+                  <span className="font-semibold">
+                    {attemptSummary.latestScore != null ? `${attemptSummary.latestScore}%` : '—'}
+                  </span>
+                </div>
+              )}
               <div className="rounded-2xl border border-primary-200 bg-white p-6 sm:p-8 space-y-4">
                 <h2 className="text-lg font-semibold text-primary-900">Thông tin học viên <span className="text-red-500">*</span></h2>
                 <p className="text-sm text-primary-600">

@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { BookOpen, Clock, ListOrdered, ArrowRight } from 'lucide-react';
+import { BookOpen, Clock, ListOrdered, ArrowRight, Lock, Unlock, Send } from 'lucide-react';
 import Breadcrumb from '@/components/layout/Breadcrumb';
-import { useGetCourseBySlugQuery } from '@/store/apiSlice';
+import { useGetCourseBySlugQuery, useGetMeQuery, useSubmitEnrollmentRequestMutation } from '@/store/apiSlice';
 import { formatCurrency } from '@/lib/utils';
 import { bodyHtmlForDisplay } from '@/lib/api';
 import { bodyLooksLikeHtml, plainTextToHtml } from '@/lib/utils';
@@ -18,6 +19,9 @@ function levelLabel(level: string): string {
 export default function CourseDetailPage() {
   const { courseSlug } = useParams<{ courseSlug: string }>();
   const { data: course, isLoading, isError, error } = useGetCourseBySlugQuery(courseSlug!, { skip: !courseSlug });
+  const { data: me } = useGetMeQuery(undefined, { skip: !courseSlug });
+  const [submitEnrollmentRequest, { isLoading: submittingRequest }] = useSubmitEnrollmentRequestMutation();
+  const [requestSent, setRequestSent] = useState(false);
   const forbidden = isError && error && typeof error === 'object' && 'status' in error && (error as { status: number }).status === 403;
 
   if (!courseSlug || isError || (!isLoading && !course)) {
@@ -111,6 +115,16 @@ export default function CourseDetailPage() {
               <ListOrdered className="h-5 w-5" />
               Nội dung khóa học ({lessons.length} bài)
             </h2>
+            {(course as { trialExpired?: boolean }).trialExpired && (
+              <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+                Tài khoản học thử đã hết hạn. Vui lòng liên hệ để mua khóa học hoặc gia hạn.
+              </div>
+            )}
+            {!course.enrolled && !(course as { trialExpired?: boolean }).trialExpired && lessons.some((l) => l.locked) && (
+              <div className="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                Một số bài học yêu cầu đăng ký khóa học để xem. Bạn có thể xem trước các bài mở miễn phí.
+              </div>
+            )}
             {lessons.length === 0 ? (
               <p className="text-primary-500">Chưa có bài học nào được xuất bản.</p>
             ) : (
@@ -128,6 +142,18 @@ export default function CourseDetailPage() {
                         <span className="font-medium text-primary-900 group-hover:text-accent-600">
                           {lesson.title}
                         </span>
+                        {lesson.isFreePreview && (
+                          <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium">
+                            <Unlock className="h-3.5 w-3.5" />
+                            Miễn phí
+                          </span>
+                        )}
+                        {lesson.locked && (
+                          <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium">
+                            <Lock className="h-3.5 w-3.5" />
+                            Cần đăng ký
+                          </span>
+                        )}
                       </span>
                       <span className="flex items-center gap-2 text-sm text-primary-500 shrink-0">
                         {lesson.durationMinutes != null && lesson.durationMinutes > 0 && (
@@ -142,14 +168,61 @@ export default function CourseDetailPage() {
             )}
           </section>
 
-          <div className="mt-10 pt-8 border-t border-primary-200">
-            <Link
-              to="/dang-ky-hoc-thu"
-              className="inline-flex items-center gap-2 rounded-lg bg-accent-600 text-white px-6 py-3 font-medium hover:bg-accent-700 transition-colors"
-            >
-              Đăng ký học thử
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+          <div className="mt-10 pt-8 border-t border-primary-200 space-y-4">
+            {(course as { trialExpired?: boolean }).trialExpired && (
+              <p className="text-primary-600 text-sm">
+                Tài khoản học thử đã hết hạn (24h). Vui lòng liên hệ để mua khóa học hoặc xin gia hạn.
+              </p>
+            )}
+            {!course.enrolled && !(course as { trialExpired?: boolean }).trialExpired && (
+              <p className="text-primary-600 text-sm">
+                Đăng ký khóa học để xem toàn bộ nội dung và làm bài tập. Bạn có thể gửi yêu cầu đăng ký (nếu đã đăng nhập) hoặc đăng ký học thử.
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+              {me && !course.enrolled && (course.enrollmentRequestStatus === 'PENDING' || requestSent) && (
+                <span className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-800 px-6 py-3 font-medium">
+                  Đang chờ giảng viên xem xét. Bạn chưa thể gửi thêm yêu cầu cho khóa này.
+                </span>
+              )}
+              {me && !course.enrolled && course.enrollmentRequestStatus !== 'PENDING' && !requestSent && (
+                <button
+                  type="button"
+                  disabled={submittingRequest}
+                  onClick={async () => {
+                    try {
+                      await submitEnrollmentRequest({ courseId: course.id }).unwrap();
+                      setRequestSent(true);
+                    } catch (e: unknown) {
+                      const msg = e && typeof e === 'object' && 'data' in e && (e as { data?: { message?: string } }).data?.message;
+                      alert(msg || 'Gửi yêu cầu thất bại. Vui lòng thử lại.');
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-700 text-white px-6 py-3 font-medium hover:bg-primary-800 transition-colors disabled:opacity-60"
+                >
+                  <Send className="h-4 w-4" />
+                  {submittingRequest ? 'Đang gửi...' : 'Gửi yêu cầu đăng ký'}
+                </button>
+              )}
+              {!me && (
+                <Link
+                  to={`/dang-ky-hoc-thu${courseSlug ? `?courseSlug=${encodeURIComponent(courseSlug)}` : ''}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-accent-600 text-white px-6 py-3 font-medium hover:bg-accent-700 transition-colors"
+                >
+                  Đăng ký học thử
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
+              {me && !course.enrolled && (
+                <Link
+                  to={`/dang-ky-hoc-thu${courseSlug ? `?courseSlug=${encodeURIComponent(courseSlug)}` : ''}`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary-300 text-primary-700 px-6 py-3 font-medium hover:bg-primary-50 transition-colors"
+                >
+                  Đăng ký học thử (tạo tài khoản 24h)
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </article>

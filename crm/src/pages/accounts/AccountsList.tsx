@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { usersApi, type UserAccount, type UserRole } from '../../api/client';
+import { usersApi, avatarUrl, type UserAccount, type UserRole } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, User, Users } from 'lucide-react';
 
 const ROLE_LABEL: Record<UserRole, string> = {
   SUPER_ADMIN: 'Super Admin',
@@ -16,6 +16,12 @@ const STATUS_LABEL: Record<string, string> = {
   ACTIVE: 'Hoạt động',
   INACTIVE: 'Vô hiệu',
   PENDING_VERIFICATION: 'Chờ xác minh',
+};
+
+const STATUS_STYLE: Record<string, string> = {
+  ACTIVE: 'bg-emerald-100 text-emerald-800',
+  INACTIVE: 'bg-slate-100 text-slate-600',
+  PENDING_VERIFICATION: 'bg-amber-100 text-amber-800',
 };
 
 export default function AccountsList() {
@@ -49,8 +55,11 @@ export default function AccountsList() {
 
   return (
     <div className="crm-page">
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Quản lý tài khoản</h1>
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Quản lý tài khoản</h1>
+          <p className="text-slate-500 text-sm mt-1">Tổng {data.total} tài khoản</p>
+        </div>
         {currentUser?.role === 'SUPER_ADMIN' && (
           <Link to="/accounts/new" className="crm-btn-primary">
             <Plus size={18} />
@@ -63,7 +72,7 @@ export default function AccountsList() {
         <select
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-          className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+          className="crm-input w-auto min-w-[140px] py-2 text-sm"
         >
           <option value="">Tất cả</option>
           {(Object.keys(ROLE_LABEL) as UserRole[]).map((r) => (
@@ -75,7 +84,7 @@ export default function AccountsList() {
         <table className="w-full">
           <thead className="bg-slate-50">
             <tr>
-              <th className="text-left p-4 text-sm font-semibold text-slate-700">Họ tên</th>
+              <th className="text-left p-4 text-sm font-semibold text-slate-700">Tài khoản</th>
               <th className="text-left p-4 text-sm font-semibold text-slate-700">Email</th>
               <th className="text-left p-4 text-sm font-semibold text-slate-700">Vai trò</th>
               <th className="text-left p-4 text-sm font-semibold text-slate-700">Trạng thái</th>
@@ -84,15 +93,39 @@ export default function AccountsList() {
           </thead>
           <tbody>
             {data.items.map((u) => (
-              <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50/80">
-                <td className="p-4 font-medium">
-                  <Link to={`/accounts/${u.id}`} className="text-blue-600 hover:underline">
-                    {u.firstName} {u.lastName}
+              <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50/80 transition-colors">
+                <td className="p-4">
+                  <Link to={`/accounts/${u.id}`} className="flex items-center gap-3 group">
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                      {u.avatar ? (
+                        <img
+                          src={avatarUrl(u.avatar)}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <User size={18} className={`text-slate-400 ${u.avatar ? 'hidden' : ''}`} strokeWidth={1.5} />
+                    </div>
+                    <span className="font-medium text-slate-900 group-hover:text-blue-600 group-hover:underline">
+                      {u.firstName} {u.lastName}
+                    </span>
                   </Link>
                 </td>
-                <td className="p-4 text-slate-600">{u.email}</td>
+                <td className="p-4 text-slate-600">
+                  <a href={`mailto:${u.email}`} className="hover:text-slate-900 hover:underline break-all">
+                    {u.email}
+                  </a>
+                </td>
                 <td className="p-4 text-slate-600">{ROLE_LABEL[u.role]}</td>
-                <td className="p-4 text-slate-600">{STATUS_LABEL[u.status] ?? u.status}</td>
+                <td className="p-4">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${STATUS_STYLE[u.status] ?? 'bg-slate-100 text-slate-600'}`}>
+                    {STATUS_LABEL[u.status] ?? u.status}
+                  </span>
+                </td>
                 <td className="p-4">
                   <div className="flex gap-2">
                     <Link to={`/accounts/${u.id}/edit`} className="crm-btn-ghost p-1.5" title="Sửa">
@@ -115,7 +148,19 @@ export default function AccountsList() {
           </tbody>
         </table>
         {data.items.length === 0 && (
-          <p className="p-8 text-center text-slate-500">Chưa có tài khoản nào.</p>
+          <div className="text-center py-12 px-4">
+            <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-7 h-7 text-slate-400" />
+            </div>
+            <p className="text-slate-600 font-medium">Chưa có tài khoản nào</p>
+            <p className="text-slate-500 text-sm mt-1">Thêm tài khoản để bắt đầu quản lý</p>
+            {currentUser?.role === 'SUPER_ADMIN' && (
+              <Link to="/accounts/new" className="inline-block mt-4 crm-btn-primary">
+                <Plus size={18} />
+                Thêm tài khoản
+              </Link>
+            )}
+          </div>
         )}
         {data.total > 20 && (
           <div className="p-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2">

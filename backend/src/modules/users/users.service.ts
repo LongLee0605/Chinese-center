@@ -103,6 +103,8 @@ export class UsersService {
         yearsExperience: true,
         teacherPublic: true,
         teacherOrderIndex: true,
+        isTrial: true,
+        trialExpiresAt: true,
       },
     });
     if (!user) throw new NotFoundException('Tài khoản không tồn tại');

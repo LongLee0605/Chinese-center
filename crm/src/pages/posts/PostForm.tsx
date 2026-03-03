@@ -1,15 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { postsApi, getUploadsBase, bodyHtmlForSave, bodyHtmlForDisplay } from '../../api/client';
+import { postsApi, toImageUrl, bodyHtmlForSave, bodyHtmlForDisplay } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import RichTextEditor from '../../components/RichTextEditor';
 import { ImagePlus } from 'lucide-react';
-
-function coverImageUrl(coverImage: string): string {
-  if (!coverImage) return '';
-  if (coverImage.startsWith('http')) return coverImage;
-  return `${getUploadsBase()}/uploads/${coverImage}`;
-}
 
 export default function PostForm() {
   const { id } = useParams();
@@ -157,7 +151,7 @@ export default function PostForm() {
             {form.coverImage && (
               <div className="shrink-0 w-40 h-28 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
                 <img
-                  src={coverImageUrl(form.coverImage)}
+                  src={toImageUrl(form.coverImage)}
                   alt="Bìa"
                   className="w-full h-full object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}

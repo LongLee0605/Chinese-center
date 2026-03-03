@@ -31,11 +31,15 @@
 
 **Quy tắc:**
 
-- **Local backend** chỉ trỏ `DATABASE_URL` tới DB **local** (localhost / Docker). Không dùng URL database của Render khi chạy `npm run dev`.
+- **Local backend** chỉ trỏ `DATABASE_URL` tới DB **local** (localhost / Docker). Không dùng URL database của Render khi chạy `npm run dev`. Nếu bạn chạy `prisma migrate deploy` từ máy local mà trỏ tới **Render Postgres**, cần thêm `?sslmode=require` vào cuối `DATABASE_URL` (Render yêu cầu SSL khi kết nối từ bên ngoài).
 - **CRM local** chỉ trỏ `VITE_API_URL` tới `http://localhost:4000/api/v1` (file `crm/.env.development`).
 - **Production**: CRM trên Cloudflare gọi API Render; backend Render dùng database Render. Ảnh upload từ production CRM lưu trên Render.
 
 Nếu bạn cấu hình đúng như trên, upload ảnh ở local sẽ không ảnh hưởng production và ngược lại. Cú pháp code và file env giống nhau, chỉ khác **giá trị** (localhost vs URL Render).
+
+**Ảnh luôn load đúng môi trường:** Backend chỉ lưu **path tương đối** (vd: `posts/xxx.jpg`, `courses/yyy.png`) vào DB, không lưu full URL. Website và CRM build URL ảnh từ **cùng API base** đang gọi (`VITE_API_URL`). Vì vậy khi bạn mở CRM/Website trỏ tới API nào thì ảnh sẽ load từ API đó — tránh lỗi ảnh khi đổi giữa local và production.
+
+**Bài học miễn phí & đăng ký khóa học:** Một số bài học có thể mở **xem miễn phí** (không cần đăng ký); bài còn lại chỉ xem được khi học viên **đã đăng ký** khóa học. Trong CRM: sửa bài học → bật **"Mở xem miễn phí"** cho bài muốn cho xem thoải mái. Đăng ký học viên vào khóa: vào **Chi tiết khóa học** → mục **"Học viên đã đăng ký"** → **Thêm học viên** (chọn tài khoản). Học viên đã đăng ký khi đăng nhập website sẽ xem được toàn bộ bài khóa (kể cả bài không đánh dấu miễn phí). Sau khi thêm cột `isFreePreview` vào bảng `lessons`, chạy `npx prisma migrate deploy` (hoặc `prisma db push`) để áp dụng schema.
 
 ---
 

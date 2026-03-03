@@ -180,6 +180,24 @@ export class QuizzesService {
     return this.prisma.quizQuestion.delete({ where: { id: questionId } });
   }
 
+  /** Website: thống kê lần làm bài của user đăng nhập */
+  async getMyAttemptsSummary(quizId: string, userId: string | null) {
+    if (!userId) return { attemptsCount: 0, latestScore: null, latestSubmittedAt: null };
+    const attempts = await this.prisma.quizAttempt.findMany({
+      where: { quizId, userId },
+      orderBy: { submittedAt: 'desc' },
+      take: 1,
+      select: { score: true, submittedAt: true },
+    });
+    const count = await this.prisma.quizAttempt.count({ where: { quizId, userId } });
+    const latest = attempts[0];
+    return {
+      attemptsCount: count,
+      latestScore: latest?.score ?? null,
+      latestSubmittedAt: latest?.submittedAt?.toISOString() ?? null,
+    };
+  }
+
   // ----- Attempt (website: nộp bài, guest hoặc user) -----
   async submitAttempt(
     quizId: string,
@@ -215,6 +233,9 @@ export class QuizzesService {
       },
     });
     const hasEssay = quiz.questions.some((q) => q.type === 'ESSAY' || q.type === 'SHORT_ANSWER');
+    const attemptNumber = opts?.userId
+      ? await this.prisma.quizAttempt.count({ where: { quizId, userId: opts.userId } })
+      : 1;
     return {
       attempt,
       score,
@@ -223,6 +244,7 @@ export class QuizzesService {
       totalQuestions: quiz.questions.length,
       hasEssayPending: hasEssay,
       passed: score != null && score >= quiz.passingScore,
+      attemptNumber,
     };
   }
 
