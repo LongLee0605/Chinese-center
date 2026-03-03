@@ -39,17 +39,17 @@ export default function CoursePreview() {
           subtitle="Lộ trình rõ ràng, giáo trình chuẩn quốc tế, học với giáo viên bản ngữ và giáo viên Việt giàu kinh nghiệm."
         />
         {isLoading && (
-          <p className="mt-10 text-center text-primary-500">Đang tải khóa học...</p>
+          <p className="section-content-mt text-center text-primary-500">Đang tải khóa học...</p>
         )}
         {isError && (
-          <p className="mt-10 text-center text-primary-500">Không tải được danh sách khóa học.</p>
+          <p className="section-content-mt text-center text-primary-500">Không tải được danh sách khóa học.</p>
         )}
         {!isLoading && !isError && courses.length === 0 && (
-          <p className="mt-10 text-center text-primary-500">Chưa có khóa học nào.</p>
+          <p className="section-content-mt text-center text-primary-500">Chưa có khóa học nào.</p>
         )}
         {!isLoading && courses.length > 0 && (
           <>
-            <div className="mt-10 sm:mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
+            <div className="section-content-mt grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
               {courses.map((course, i) => (
                 <motion.div
                   key={course.id}

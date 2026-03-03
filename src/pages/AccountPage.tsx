@@ -30,19 +30,19 @@ export default function AccountPage() {
   const isStudent = me.role === 'STUDENT';
 
   return (
-    <div className="container-wide px-4 py-8 sm:py-12">
+    <div className="container-wide px-4 sm:px-6 lg:px-8 page-content">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl sm:text-3xl font-display font-bold text-primary-900 mb-2">
           Thông tin tài khoản
         </h1>
-        <p className="text-primary-600 mb-8">
+        <p className="text-primary-600 mb-8 sm:mb-10">
           Xem thông tin cá nhân và tiến độ học tập của bạn.
         </p>
 
-        <section className="bg-white rounded-2xl border border-primary-100 shadow-sm overflow-hidden mb-6">
-          <div className="p-6 border-b border-primary-100">
-            <h2 className="text-lg font-semibold text-primary-900 mb-3">Thông tin cá nhân</h2>
-            <dl className="space-y-2 text-sm">
+        <section className="bg-white rounded-2xl border border-primary-100 shadow-sm overflow-hidden mb-6 sm:mb-8">
+          <div className="p-5 sm:p-6 border-b border-primary-100">
+            <h2 className="text-lg font-semibold text-primary-900 mb-4">Thông tin cá nhân</h2>
+            <dl className="space-y-3 text-sm">
               <div>
                 <dt className="text-primary-500">Họ và tên</dt>
                 <dd className="font-medium text-primary-900">{me.firstName} {me.lastName}</dd>
@@ -63,20 +63,20 @@ export default function AccountPage() {
 
         {isStudent && (
           <>
-            <section className="bg-white rounded-2xl border border-primary-100 shadow-sm overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-primary-100 flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-accent-600" />
+            <section className="bg-white rounded-2xl border border-primary-100 shadow-sm overflow-hidden mb-6 sm:mb-8">
+              <div className="px-5 sm:px-6 py-4 border-b border-primary-100 flex items-center gap-3">
+                <BookOpen className="h-5 w-5 text-accent-600 shrink-0" />
                 <h2 className="text-lg font-semibold text-primary-900">Khóa học đã đăng ký</h2>
               </div>
-              <div className="p-6">
+              <div className="p-5 sm:p-6">
                 {enrollments.length === 0 ? (
-                  <p className="text-primary-500 text-sm">Bạn chưa đăng ký khóa học nào.</p>
+                  <p className="text-primary-500 text-sm py-2">Bạn chưa đăng ký khóa học nào.</p>
                 ) : (
-                  <ul className="space-y-4">
+                  <ul className="space-y-3">
                     {enrollments.map((e) => (
                       <li
                         key={e.courseId}
-                        className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-primary-50 border border-primary-100"
+                        className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 rounded-xl bg-primary-50 border border-primary-100"
                       >
                         <Link
                           to={`/khoa-hoc/${e.courseSlug}`}
@@ -94,20 +94,20 @@ export default function AccountPage() {
               </div>
             </section>
 
-            <section className="bg-white rounded-2xl border border-primary-100 shadow-sm overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-primary-100 flex items-center gap-2">
-                <ClipboardList className="h-5 w-5 text-accent-600" />
+            <section className="bg-white rounded-2xl border border-primary-100 shadow-sm overflow-hidden mb-6 sm:mb-8">
+              <div className="px-5 sm:px-6 py-4 border-b border-primary-100 flex items-center gap-3">
+                <ClipboardList className="h-5 w-5 text-accent-600 shrink-0" />
                 <h2 className="text-lg font-semibold text-primary-900">Kết quả bài test</h2>
               </div>
-              <div className="p-6">
+              <div className="p-5 sm:p-6">
                 {quizAttempts.length === 0 ? (
-                  <p className="text-primary-500 text-sm">Bạn chưa làm bài test nào.</p>
+                  <p className="text-primary-500 text-sm py-2">Bạn chưa làm bài test nào.</p>
                 ) : (
-                  <ul className="space-y-3">
+                  <ul className="space-y-2 sm:space-y-3">
                     {quizAttempts.map((a) => (
                       <li
                         key={a.id}
-                        className="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-primary-100 last:border-0"
+                        className="flex flex-wrap items-center justify-between gap-3 py-3 sm:py-4 border-b border-primary-100 last:border-0"
                       >
                         <span className="font-medium text-primary-900">{a.quizTitle}</span>
                         <span className="text-sm text-primary-600">

@@ -47,22 +47,22 @@ export default function TeachersPreview() {
           title="Giáo viên chuyên nghiệp, tận tâm"
           subtitle="100% giáo viên có chứng chỉ sư phạm và kinh nghiệm giảng dạy tiếng Trung."
         />
-        <div className="mt-4 flex items-center justify-center gap-2 text-primary-600">
+        <div className="mt-5 flex items-center justify-center gap-2 text-primary-600">
           <Award className="h-5 w-5 text-accent-500 shrink-0" />
           <span className="text-sm font-medium">Chứng chỉ HSK6, phương pháp chuẩn quốc tế</span>
         </div>
         {isLoading && (
-          <p className="mt-10 text-center text-primary-500">Đang tải đội ngũ giáo viên...</p>
+          <p className="section-content-mt text-center text-primary-500">Đang tải đội ngũ giáo viên...</p>
         )}
         {isError && (
-          <p className="mt-10 text-center text-primary-500">Không tải được danh sách giáo viên.</p>
+          <p className="section-content-mt text-center text-primary-500">Không tải được danh sách giáo viên.</p>
         )}
         {!isLoading && !isError && teachers.length === 0 && (
-          <p className="mt-10 text-center text-primary-500">Chưa có thông tin giáo viên.</p>
+          <p className="section-content-mt text-center text-primary-500">Chưa có thông tin giáo viên.</p>
         )}
         {!isLoading && teachers.length > 0 && (
           <>
-            <div className="mt-10 sm:mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="section-content-mt grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
               {teachers.map((teacher, i) => (
                 <motion.div
                   key={teacher.id}
@@ -79,7 +79,7 @@ export default function TeachersPreview() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="mt-10 sm:mt-12 text-center"
+              className="section-content-mt text-center"
             >
               <Link to="/doi-ngu-giao-vien">
                 <Button variant="outline" size="lg" className="group">

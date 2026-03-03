@@ -49,8 +49,8 @@ export default function AccountsList() {
 
   return (
     <div className="crm-page">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Quản lý tài khoản</h1>
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Quản lý tài khoản</h1>
         {currentUser?.role === 'SUPER_ADMIN' && (
           <Link to="/accounts/new" className="crm-btn-primary">
             <Plus size={18} />
@@ -58,7 +58,7 @@ export default function AccountsList() {
           </Link>
         )}
       </div>
-      <div className="mb-4 flex gap-2 items-center">
+      <div className="mb-5 flex flex-wrap gap-2 items-center">
         <label className="text-sm text-slate-600">Lọc theo vai trò:</label>
         <select
           value={roleFilter}
@@ -73,27 +73,27 @@ export default function AccountsList() {
       </div>
       <div className="crm-card overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="text-left p-3">Họ tên</th>
-              <th className="text-left p-3">Email</th>
-              <th className="text-left p-3">Vai trò</th>
-              <th className="text-left p-3">Trạng thái</th>
-              <th className="text-left p-3 w-32">Thao tác</th>
+              <th className="text-left p-4 text-sm font-semibold text-slate-700">Họ tên</th>
+              <th className="text-left p-4 text-sm font-semibold text-slate-700">Email</th>
+              <th className="text-left p-4 text-sm font-semibold text-slate-700">Vai trò</th>
+              <th className="text-left p-4 text-sm font-semibold text-slate-700">Trạng thái</th>
+              <th className="text-left p-4 w-32 text-sm font-semibold text-slate-700">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {data.items.map((u) => (
-              <tr key={u.id} className="border-t hover:bg-gray-50">
-                <td className="p-3 font-medium">
+              <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50/80">
+                <td className="p-4 font-medium">
                   <Link to={`/accounts/${u.id}`} className="text-blue-600 hover:underline">
                     {u.firstName} {u.lastName}
                   </Link>
                 </td>
-                <td className="p-3">{u.email}</td>
-                <td className="p-3">{ROLE_LABEL[u.role]}</td>
-                <td className="p-3">{STATUS_LABEL[u.status] ?? u.status}</td>
-                <td className="p-3">
+                <td className="p-4 text-slate-600">{u.email}</td>
+                <td className="p-4 text-slate-600">{ROLE_LABEL[u.role]}</td>
+                <td className="p-4 text-slate-600">{STATUS_LABEL[u.status] ?? u.status}</td>
+                <td className="p-4">
                   <div className="flex gap-2">
                     <Link to={`/accounts/${u.id}/edit`} className="crm-btn-ghost p-1.5" title="Sửa">
                       <Pencil size={16} />
@@ -115,10 +115,10 @@ export default function AccountsList() {
           </tbody>
         </table>
         {data.items.length === 0 && (
-          <p className="p-6 text-center text-slate-500">Chưa có tài khoản nào.</p>
+          <p className="p-8 text-center text-slate-500">Chưa có tài khoản nào.</p>
         )}
         {data.total > 20 && (
-          <div className="p-3 border-t flex justify-between items-center">
+          <div className="p-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2">
             <span className="text-sm text-slate-600">Tổng {data.total} tài khoản</span>
             <div className="flex gap-2">
               <button

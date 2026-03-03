@@ -73,7 +73,7 @@ export default function CoursesPage() {
             title="Chương trình đào tạo"
             subtitle="Chọn khóa học phù hợp với mục tiêu và trình độ của bạn. Mỗi khóa có lộ trình rõ ràng và giáo trình chuẩn HSK."
           />
-          <div className="mt-8 flex flex-wrap gap-2 justify-center">
+          <div className="section-content-mt flex flex-wrap gap-3 justify-center">
             {filters.map((f) => (
               <button
                 key={f.value}
@@ -92,15 +92,15 @@ export default function CoursesPage() {
       </section>
       <section className="section-padding pt-0">
         <div className="container-wide">
-          {isLoading && <p className="text-center text-primary-500">Đang tải...</p>}
-          {isError && <p className="text-center text-primary-500">Không tải được danh sách khóa học.</p>}
+          {isLoading && <p className="section-content-mt text-center text-primary-500">Đang tải...</p>}
+          {isError && <p className="section-content-mt text-center text-primary-500">Không tải được danh sách khóa học.</p>}
           {!isLoading && !isError && coursesForCard.length === 0 && (
-            <p className="text-center text-primary-500">Chưa có khóa học nào.</p>
+            <p className="section-content-mt text-center text-primary-500">Chưa có khóa học nào.</p>
           )}
           {!isLoading && coursesForCard.length > 0 && (
             <motion.div
               layout
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+              className="section-content-mt grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10"
             >
               {coursesForCard.map((course, i) => (
                 <motion.div

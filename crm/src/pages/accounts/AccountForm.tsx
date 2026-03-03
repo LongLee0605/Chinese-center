@@ -169,8 +169,9 @@ export default function AccountForm() {
           Quay lại danh sách
         </Link>
       </div>
-      <h1 className="text-2xl font-bold mb-4">{id ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản'}</h1>
-      <form onSubmit={handleSubmit} className="crm-card max-w-xl space-y-4 p-6">
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{id ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản'}</h1>
+      <p className="text-slate-500 text-sm mb-6">Điền thông tin và chọn vai trò. Với vai trò Giảng viên, bổ sung thông tin hiển thị đội ngũ.</p>
+      <form onSubmit={handleSubmit} className="crm-card max-w-xl crm-form-grid crm-card-padding">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
           <input
@@ -254,9 +255,9 @@ export default function AccountForm() {
 
         {isTeacher && (
           <>
-            <div className="border-t border-slate-200 pt-4 mt-4">
-              <h2 className="text-sm font-semibold text-slate-800 mb-3">Thông tin hiển thị đội ngũ (website)</h2>
-              <div className="space-y-4">
+            <div className="border-t border-slate-200 pt-6 mt-2">
+              <h2 className="text-sm font-semibold text-slate-800 mb-4">Thông tin hiển thị đội ngũ (website)</h2>
+              <div className="crm-form-grid">
                 {id && (
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Ảnh đại diện</label>
@@ -342,7 +343,7 @@ export default function AccountForm() {
           </>
         )}
 
-        <div className="flex gap-5 pt-2 items-center">
+        <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100 mt-2">
           <button type="submit" disabled={saving} className="crm-btn-primary">
             {saving ? 'Đang lưu...' : 'Lưu'}
           </button>

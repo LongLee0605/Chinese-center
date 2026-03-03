@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --crm-page-y: 1.5rem;
+  --crm-page-x: 1rem;
+  --crm-page-y-sm: 2rem;
+  --crm-page-x-sm: 1.5rem;
+  --crm-page-y-lg: 2rem;
+  --crm-page-x-lg: 2rem;
+  --crm-section-gap: 1.5rem;
+  --crm-section-gap-lg: 2rem;
+  --crm-card-padding: 1.25rem;
+  --crm-card-padding-lg: 1.5rem;
+  --crm-form-gap: 1.25rem;
+  --crm-form-gap-lg: 1.5rem;
+}
+
 @layer base {
   html {
     @apply antialiased;
@@ -16,22 +31,56 @@
 
 @layer components {
   .crm-page {
-    @apply p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto;
+    padding: var(--crm-page-y) var(--crm-page-x);
+    max-width: 72rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  @media (min-width: 640px) {
+    .crm-page {
+      padding: var(--crm-page-y-sm) var(--crm-page-x-sm);
+    }
+  }
+  @media (min-width: 1024px) {
+    .crm-page {
+      padding: var(--crm-page-y-lg) var(--crm-page-x-lg);
+    }
   }
   .crm-card {
     @apply bg-white rounded-xl border border-slate-200/80 shadow-card;
   }
+  .crm-card-padding {
+    padding: var(--crm-card-padding);
+  }
+  @media (min-width: 640px) {
+    .crm-card-padding {
+      padding: var(--crm-card-padding-lg);
+    }
+  }
+  .crm-form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--crm-form-gap);
+  }
+  @media (min-width: 640px) {
+    .crm-form-grid {
+      gap: var(--crm-form-gap-lg);
+    }
+  }
   .crm-btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-white bg-crm-accent hover:bg-crm-accentHover transition-colors disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-white bg-crm-accent hover:bg-crm-accentHover transition-colors disabled:opacity-50 disabled:pointer-events-none;
   }
   .crm-btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors;
+  }
+  .crm-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg p-2 text-slate-600 hover:bg-slate-100 transition-colors;
   }
   .crm-input {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-crm-accent/40 focus:border-crm-accent;
+    @apply w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-crm-accent/40 focus:border-crm-accent;
   }
   .crm-select {
-    @apply rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-crm-accent/40 focus:border-crm-accent;
+    @apply rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-crm-accent/40 focus:border-crm-accent;
   }
 }
 

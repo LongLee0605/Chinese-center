@@ -21,17 +21,17 @@ export default function PostsPreview() {
           subtitle="Cập nhật mẹo học tiếng Trung, kinh nghiệm luyện thi HSK và thông tin từ trung tâm."
         />
         {isLoading && (
-          <p className="mt-10 text-center text-primary-500">Đang tải tin tức...</p>
+          <p className="section-content-mt text-center text-primary-500">Đang tải tin tức...</p>
         )}
         {isError && (
-          <p className="mt-10 text-center text-primary-500">Không tải được bài viết.</p>
+          <p className="section-content-mt text-center text-primary-500">Không tải được bài viết.</p>
         )}
         {!isLoading && !isError && posts.length === 0 && (
-          <p className="mt-10 text-center text-primary-500">Chưa có bài viết nào.</p>
+          <p className="section-content-mt text-center text-primary-500">Chưa có bài viết nào.</p>
         )}
         {!isLoading && posts.length > 0 && (
           <>
-            <div className="mt-10 grid sm:grid-cols-3 gap-6">
+            <div className="section-content-mt grid sm:grid-cols-3 gap-6 sm:gap-8">
               {posts.map((post, i) => (
                 <motion.article
                   key={post?.id ?? i}
@@ -42,7 +42,7 @@ export default function PostsPreview() {
                 >
                   <Link
                     to={`/tin-tuc/${post?.slug ?? ''}`}
-                    className="block rounded-xl border border-primary-200 bg-white p-5 shadow-card hover:shadow-card-hover hover:border-accent-100 transition-all h-full flex flex-col"
+                    className="block rounded-xl border border-primary-200 bg-white p-5 sm:p-6 shadow-card hover:shadow-card-hover hover:border-accent-100 transition-all h-full flex flex-col"
                   >
                     <div className="h-2 w-16 rounded-full bg-accent-500 mb-4" />
                     <h3 className="font-bold text-primary-900 line-clamp-2 mb-2">{post?.title ?? ''}</h3>

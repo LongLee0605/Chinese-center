@@ -78,8 +78,8 @@ export default function AccountDetail() {
   const teacherUser = user as UserDetail & { title?: string; bio?: string; avatar?: string; specializations?: string[]; yearsExperience?: number; teacherPublic?: boolean; teacherOrderIndex?: number };
 
   return (
-    <div className="p-6 max-w-4xl">
-      <div className="flex items-center justify-between gap-4 mb-6">
+    <div className="crm-page max-w-4xl">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <Link to="/accounts" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:underline">
           <ArrowLeft size={18} />
           Danh sách tài khoản
@@ -95,8 +95,8 @@ export default function AccountDetail() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-        <div className="p-6 border-b border-slate-100">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+        <div className="crm-card-padding border-b border-slate-100">
           <h1 className="text-2xl font-bold text-slate-900">
             {user.firstName} {user.lastName}
           </h1>
@@ -138,12 +138,12 @@ export default function AccountDetail() {
 
       {isStudent && (
         <>
-          <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-              <BookOpen size={20} className="text-slate-600" />
+          <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+              <BookOpen size={20} className="text-slate-600 shrink-0" />
               <h2 className="text-lg font-semibold text-slate-900">Khóa học đã mua / đăng ký</h2>
             </div>
-            <div className="p-6">
+            <div className="crm-card-padding">
               {enrollments.length === 0 ? (
                 <p className="text-slate-500 text-sm">Chưa đăng ký khóa học nào.</p>
               ) : (
@@ -151,7 +151,7 @@ export default function AccountDetail() {
                   {enrollments.map((e) => (
                     <li
                       key={e.courseId}
-                      className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg bg-slate-50 border border-slate-100"
+                      className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 rounded-lg bg-slate-50 border border-slate-100"
                     >
                       <div>
                         <Link
@@ -176,21 +176,21 @@ export default function AccountDetail() {
             </div>
           </section>
 
-          <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-              <ClipboardList size={20} className="text-slate-600" />
+          <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+              <ClipboardList size={20} className="text-slate-600 shrink-0" />
               <h2 className="text-lg font-semibold text-slate-900">Kết quả bài test đã làm</h2>
             </div>
-            <div className="p-6">
+            <div className="crm-card-padding">
               {quizAttempts.length === 0 ? (
                 <p className="text-slate-500 text-sm">Chưa làm bài test nào.</p>
               ) : (
                 <ul className="space-y-3">
-                  {quizAttempts.map((a) => (
-                    <li
-                      key={a.id}
-                      className="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-slate-100 last:border-0"
-                    >
+                    {quizAttempts.map((a) => (
+                      <li
+                        key={a.id}
+                        className="flex flex-wrap items-center justify-between gap-3 py-4 border-b border-slate-100 last:border-0"
+                      >
                       <span className="font-medium text-slate-900">{a.quizTitle}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-slate-600">

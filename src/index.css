@@ -5,16 +5,21 @@
 :root {
   --font-inter: 'Inter', system-ui, sans-serif;
   --font-display: 'Inter', sans-serif;
-  /* Khoảng cách chuẩn */
-  --section-y: 4rem;      /* 64px mobile */
+  /* Spacing scale (4/8 base) – dùng cho section, container, nội dung */
+  --section-y: 3.5rem;    /* 56px mobile */
   --section-y-lg: 5rem;   /* 80px tablet+ */
+  --section-inner: 2.5rem;  /* 40px giữa title và content trong section */
+  --section-inner-lg: 3rem; /* 48px tablet+ */
   --container-x: 1rem;    /* 16px mobile */
   --container-x-sm: 1.5rem;
   --container-x-lg: 2rem;
-  --content-gap: 1.5rem;  /* 24px giữa nội dung */
+  --content-gap: 1.5rem;  /* 24px giữa block */
   --content-gap-lg: 2rem; /* 32px */
-  --card-padding: 1.5rem;
-  --card-padding-lg: 2rem;
+  --card-padding: 1.25rem; /* 20px */
+  --card-padding-lg: 1.5rem;
+  --card-padding-xl: 2rem;
+  --page-y: 2rem;        /* padding top/bottom trang nội dung */
+  --page-y-lg: 3rem;
 }
 
 @layer base {
@@ -64,9 +69,29 @@
   .container-wide {
     @apply max-w-6xl mx-auto;
   }
-  /* Khoảng cách giữa block trong section */
+  /* Khoảng cách giữa title và nội dung trong section */
+  .section-content-mt {
+    margin-top: var(--section-inner);
+  }
+  @media (min-width: 640px) {
+    .section-content-mt {
+      margin-top: var(--section-inner-lg);
+    }
+  }
+  /* Khoảng cách giữa block trong section (grid/flex gap) */
   .section-inner-gap {
     @apply gap-8 sm:gap-10 lg:gap-12;
+  }
+  /* Trang nội dung (form, chi tiết): padding dọc đồng bộ */
+  .page-content {
+    padding-top: var(--page-y);
+    padding-bottom: var(--page-y);
+  }
+  @media (min-width: 640px) {
+    .page-content {
+      padding-top: var(--page-y-lg);
+      padding-bottom: var(--page-y-lg);
+    }
   }
   .card-padding {
     padding: var(--card-padding);
@@ -74,6 +99,11 @@
   @media (min-width: 640px) {
     .card-padding {
       padding: var(--card-padding-lg);
+    }
+  }
+  @media (min-width: 1024px) {
+    .card-padding {
+      padding: var(--card-padding-xl);
     }
   }
 }
