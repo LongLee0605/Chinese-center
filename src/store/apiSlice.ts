@@ -13,6 +13,7 @@ export const apiSlice = createApi({
     },
   }),
   tagTypes: ['Posts', 'Post', 'Courses', 'Course', 'Teachers', 'Me'],
+  keepUnusedDataFor: 300,
   endpoints: (builder) => ({
     getMe: builder.query<
       {

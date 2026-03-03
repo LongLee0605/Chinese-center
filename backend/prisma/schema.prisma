@@ -211,6 +211,8 @@ model Course {
   enrollments              CourseEnrollment[]
   enrollmentRequests       CourseEnrollmentRequest[]
   trialRegistrations       TrialRegistration[]
+
+  @@index([status])
 }
 
 model Lesson {

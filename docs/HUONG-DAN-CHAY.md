@@ -16,6 +16,8 @@
 
 **Việc bạn cần làm:** Bật PostgreSQL (Docker hoặc cài sẵn hoặc database cloud), rồi chạy các lệnh ở mục 4, 5, 7 bên dưới.
 
+**Tối ưu đã áp dụng (backend):** Helmet (security headers), compression (gzip), ValidationPipe (whitelist + forbidNonWhitelisted), index Prisma cho `Course.status`. Sau khi pull code mới, chạy `cd backend && npx prisma db push` hoặc `npx prisma migrate dev` để áp dụng index (nếu dùng migrate).
+
 ---
 
 ## Tách biệt Local và Production (quan trọng)

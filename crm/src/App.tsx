@@ -1,25 +1,35 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import { ToastProvider } from './context/ToastContext';
 import Layout from './layout/Layout';
-import Login from './pages/Login';
-import PostsList from './pages/posts/PostsList';
-import PostForm from './pages/posts/PostForm';
-import CoursesList from './pages/courses/CoursesList';
-import CourseForm from './pages/courses/CourseForm';
-import CourseDetail from './pages/courses/CourseDetail';
-import QuizzesList from './pages/quizzes/QuizzesList';
-import QuizDetail from './pages/quizzes/QuizDetail';
-import QuizAttemptDetail from './pages/quizzes/QuizAttemptDetail';
-import Dashboard from './pages/Dashboard';
-import Mail from './pages/Mail';
-import LeadsList from './pages/leads/LeadsList';
-import LeadDetail from './pages/leads/LeadDetail';
-import TrialRegistrationsList from './pages/trial-registrations/TrialRegistrationsList';
-import AccountsList from './pages/accounts/AccountsList';
-import AccountForm from './pages/accounts/AccountForm';
-import AccountDetail from './pages/accounts/AccountDetail';
+
+const Login = lazy(() => import('./pages/Login'));
+const PostsList = lazy(() => import('./pages/posts/PostsList'));
+const PostForm = lazy(() => import('./pages/posts/PostForm'));
+const CoursesList = lazy(() => import('./pages/courses/CoursesList'));
+const CourseForm = lazy(() => import('./pages/courses/CourseForm'));
+const CourseDetail = lazy(() => import('./pages/courses/CourseDetail'));
+const QuizzesList = lazy(() => import('./pages/quizzes/QuizzesList'));
+const QuizDetail = lazy(() => import('./pages/quizzes/QuizDetail'));
+const QuizAttemptDetail = lazy(() => import('./pages/quizzes/QuizAttemptDetail'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Mail = lazy(() => import('./pages/Mail'));
+const LeadsList = lazy(() => import('./pages/leads/LeadsList'));
+const LeadDetail = lazy(() => import('./pages/leads/LeadDetail'));
+const TrialRegistrationsList = lazy(() => import('./pages/trial-registrations/TrialRegistrationsList'));
+const AccountsList = lazy(() => import('./pages/accounts/AccountsList'));
+const AccountForm = lazy(() => import('./pages/accounts/AccountForm'));
+const AccountDetail = lazy(() => import('./pages/accounts/AccountDetail'));
+
+function PageFallback() {
+  return (
+    <div className="p-8 text-center text-slate-500">
+      Đang tải...
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -51,39 +61,41 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-      <ScrollToTop />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="posts" element={<PostsList />} />
-          <Route path="posts/new" element={<PostForm />} />
-          <Route path="posts/:id" element={<PostForm />} />
-          <Route path="courses" element={<CoursesList />} />
-          <Route path="courses/new" element={<CourseForm />} />
-          <Route path="courses/:id/edit" element={<CourseForm />} />
-          <Route path="courses/:id" element={<CourseDetail />} />
-          <Route path="quizzes" element={<QuizzesList />} />
-          <Route path="quizzes/attempt/:attemptId" element={<QuizAttemptDetail />} />
-          <Route path="quizzes/:id" element={<QuizDetail />} />
-          <Route path="leads" element={<LeadsList />} />
-          <Route path="leads/:id" element={<LeadDetail />} />
-          <Route path="trial-registrations" element={<TrialRegistrationsList />} />
-          <Route path="accounts" element={<AccountsList />} />
-          <Route path="accounts/new" element={<AccountForm />} />
-          <Route path="accounts/:id/edit" element={<AccountForm />} />
-          <Route path="accounts/:id" element={<AccountDetail />} />
-          <Route path="mail" element={<Mail />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        <ScrollToTop />
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="posts" element={<PostsList />} />
+              <Route path="posts/new" element={<PostForm />} />
+              <Route path="posts/:id" element={<PostForm />} />
+              <Route path="courses" element={<CoursesList />} />
+              <Route path="courses/new" element={<CourseForm />} />
+              <Route path="courses/:id/edit" element={<CourseForm />} />
+              <Route path="courses/:id" element={<CourseDetail />} />
+              <Route path="quizzes" element={<QuizzesList />} />
+              <Route path="quizzes/attempt/:attemptId" element={<QuizAttemptDetail />} />
+              <Route path="quizzes/:id" element={<QuizDetail />} />
+              <Route path="leads" element={<LeadsList />} />
+              <Route path="leads/:id" element={<LeadDetail />} />
+              <Route path="trial-registrations" element={<TrialRegistrationsList />} />
+              <Route path="accounts" element={<AccountsList />} />
+              <Route path="accounts/new" element={<AccountForm />} />
+              <Route path="accounts/:id/edit" element={<AccountForm />} />
+              <Route path="accounts/:id" element={<AccountDetail />} />
+              <Route path="mail" element={<Mail />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </ToastProvider>
     </AuthProvider>
   );

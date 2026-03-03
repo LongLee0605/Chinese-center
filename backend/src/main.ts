@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import helmet from 'helmet';
+import compression from 'compression';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -15,6 +17,8 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(compression());
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   // Local: localhost. Production: CORS_ORIGINS (comma-separated). Cloudflare Pages: *.pages.dev cho cả production và preview URL.
   const originsFromEnv = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) ?? [];
