@@ -64,6 +64,11 @@ export default function TrialRegistrationsList() {
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
         <UserPlus size={28} className="text-emerald-600 shrink-0" />
         Đăng ký học thử
+        {total > 0 && (
+          <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+            {total} kết quả
+          </span>
+        )}
       </h1>
       <p className="text-sm text-gray-500 mb-6">
         Khách từ website gửi form học thử theo khóa. Duyệt sẽ tạo tài khoản tạm (24h) và đăng ký vào khóa tương ứng.

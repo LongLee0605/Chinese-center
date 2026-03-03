@@ -57,7 +57,7 @@ function itemUrl(
     case 'users':
       return `/accounts/${item.id}`;
     default:
-      return groupLabels[key]?.basePath ?? '#';
+      return '#';
   }
 }
 
@@ -209,7 +209,7 @@ export default function GlobalSearch() {
           ) : (
             <div className="max-h-[70vh] overflow-y-auto py-2">
               {groups.map((key) => {
-                const items = result![key] as unknown[];
+                const items = result![key] as Record<string, unknown>[];
                 if (!items?.length) return null;
                 const { label, icon: Icon } = groupLabels[key];
                 return (

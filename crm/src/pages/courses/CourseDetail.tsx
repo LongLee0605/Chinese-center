@@ -4,7 +4,7 @@ import { coursesApi, lessonsApi, quizzesApi, usersApi, enrollmentRequestsApi, bo
 import type { EnrollmentRequest } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import RichTextEditor from '../../components/RichTextEditor';
-import { Plus, Pencil, Trash2, ArrowLeft, BookOpen, Video, FileText, ClipboardList, ChevronUp, ChevronDown, ExternalLink, UserPlus, Lock, Unlock, Send, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowLeft, BookOpen, Video, FileText, ClipboardList, ChevronUp, ChevronDown, ExternalLink, UserPlus, Unlock, Send, Check, X } from 'lucide-react';
 
 type Lesson = {
   id: string;
