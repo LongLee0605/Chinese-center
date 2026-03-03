@@ -51,8 +51,9 @@ export default function BookTrialPage() {
       }).unwrap();
       setSent(true);
     } catch (err: unknown) {
-      const msg = err && typeof err === 'object' && 'data' in err && (err as { data?: { message?: string } }).data?.message;
-      setError(msg || (err instanceof Error ? err.message : 'Gửi thất bại. Vui lòng thử lại.'));
+      const dataMessage = err && typeof err === 'object' && 'data' in err && (err as { data?: { message?: unknown } }).data?.message;
+      const msg = typeof dataMessage === 'string' ? dataMessage : (err instanceof Error ? err.message : 'Gửi thất bại. Vui lòng thử lại.');
+      setError(msg);
     }
   };
 

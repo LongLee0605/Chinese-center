@@ -114,7 +114,7 @@ export const apiSlice = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _err, arg) => [{ type: 'Course', id: undefined }],
+      invalidatesTags: () => [{ type: 'Course', id: undefined }],
     }),
     submitTrialRegistration: builder.mutation<{ id: string }, { email: string; fullName: string; phone?: string; courseSlug: string; message?: string }>({
       query: (body) => ({
