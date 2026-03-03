@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { getApiBase } from '@/lib/api';
+import { getApiBase, getAuthToken } from '@/lib/api';
 
 export const apiSlice = createApi({
   reducerPath: 'api',
@@ -7,11 +7,30 @@ export const apiSlice = createApi({
     baseUrl: getApiBase(),
     prepareHeaders: (headers) => {
       headers.set('Content-Type', 'application/json');
+      const token = getAuthToken();
+      if (token) headers.set('Authorization', `Bearer ${token}`);
       return headers;
     },
   }),
-  tagTypes: ['Posts', 'Post', 'Courses', 'Course', 'Teachers'],
+  tagTypes: ['Posts', 'Post', 'Courses', 'Course', 'Teachers', 'Me'],
   endpoints: (builder) => ({
+    getMe: builder.query<
+      {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        phone?: string | null;
+        role: string;
+        status: string;
+        enrollments?: { courseId: string; courseName: string; courseSlug: string; enrolledAt: string; totalLessons: number; completedLessons: number; percentProgress: number }[];
+        quizAttempts?: { id: string; quizId: string; quizTitle: string; quizSlug: string; score: number | null; submittedAt: string | null }[];
+      },
+      void
+    >({
+      query: () => '/users/me',
+      providesTags: ['Me'],
+    }),
     getPosts: builder.query<
       { items: { id: string; title: string; slug: string; excerpt?: string; publishedAt?: string }[]; total: number },
       { page?: number; limit?: number }
@@ -30,7 +49,7 @@ export const apiSlice = createApi({
       { items: { id: string; name: string; nameZh?: string; slug: string; level?: string; duration?: number; price?: number; description?: string; thumbnail?: string }[] },
       void
     >({
-      query: () => '/courses?limit=50',
+      query: () => '/courses/public?limit=50',
       providesTags: ['Courses'],
     }),
     getCourseBySlug: builder.query<
@@ -84,4 +103,5 @@ export const {
   useGetCourseBySlugQuery,
   useGetTeachersQuery,
   useSubmitLeadMutation,
+  useGetMeQuery,
 } = apiSlice;

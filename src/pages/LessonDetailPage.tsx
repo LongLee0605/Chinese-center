@@ -12,7 +12,8 @@ const LESSON_TYPE_LABELS: Record<string, { label: string; icon: typeof FileText 
 
 export default function LessonDetailPage() {
   const { courseSlug, lessonSlug } = useParams<{ courseSlug: string; lessonSlug: string }>();
-  const { data: course, isLoading, isError } = useGetCourseBySlugQuery(courseSlug!, { skip: !courseSlug });
+  const { data: course, isLoading, isError, error } = useGetCourseBySlugQuery(courseSlug!, { skip: !courseSlug });
+  const forbidden = isError && error && typeof error === 'object' && 'status' in error && (error as { status: number }).status === 403;
 
   const lessons = course?.lessons ?? [];
   const currentIndex = lessons.findIndex((l) => l.slug === lessonSlug);
@@ -24,7 +25,11 @@ export default function LessonDetailPage() {
     return (
       <div className="min-h-screen bg-primary-50 section-padding">
         <div className="container-narrow text-center">
-          <p className="text-primary-600">Không tìm thấy bài học.</p>
+          {forbidden ? (
+            <p className="text-primary-600">Bạn không có quyền xem bài học này.</p>
+          ) : (
+            <p className="text-primary-600">Không tìm thấy bài học.</p>
+          )}
           <Link to="/khoa-hoc" className="mt-4 inline-block text-accent-600 font-medium">
             ← Về khóa học
           </Link>

@@ -8,16 +8,19 @@ import {
   Param,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CoursesService } from './courses.service';
 import { RolesGuard } from '../../core/guards/roles.guard';
+import { OptionalJwtAuthGuard } from '../../core/guards/optional-jwt.guard';
 
 @Controller('courses')
 export class CoursesController {
   constructor(private courses: CoursesService) {}
 
   @Get()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   getList(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -30,14 +33,39 @@ export class CoursesController {
     });
   }
 
+  /** Website: danh sách khóa học theo quyền (guest hoặc role). */
+  @Get('public')
+  @UseGuards(OptionalJwtAuthGuard)
+  getPublicList(
+    @Request() req: { user?: { role?: string } },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const role = req.user?.role ?? null;
+    return this.courses.findForPublic(
+      { page: Number(page) || 1, limit: Number(limit) || 50 },
+      role,
+    );
+  }
+
   @Get('by-slug/:slug')
-  getBySlug(@Param('slug') slug: string) {
-    return this.courses.findBySlug(slug);
+  @UseGuards(OptionalJwtAuthGuard)
+  getBySlug(
+    @Request() req: { user?: { role?: string } },
+    @Param('slug') slug: string,
+  ) {
+    const role = req.user?.role ?? null;
+    return this.courses.findBySlug(slug, role);
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string) {
-    return this.courses.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  getOne(
+    @Request() req: { user?: { role?: string } },
+    @Param('id') id: string,
+  ) {
+    const role = req.user?.role ?? null;
+    return this.courses.findOne(id, role);
   }
 
   @Post()
@@ -48,13 +76,17 @@ export class CoursesController {
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.courses.update(id, body);
+  update(
+    @Request() req: { user: { role: string } },
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.courses.update(id, body, req.user.role);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  remove(@Param('id') id: string) {
-    return this.courses.remove(id);
+  remove(@Request() req: { user: { role: string } }, @Param('id') id: string) {
+    return this.courses.remove(id, req.user.role);
   }
 }

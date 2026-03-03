@@ -38,7 +38,8 @@ export class AuthService {
     return user ?? null;
   }
 
-  isAdminOrTeacher(role: UserRole): boolean {
-    return role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'TEACHER';
+  /** SUPER_ADMIN, TEACHER: được vào CRM (trừ quản lý user chỉ SUPER_ADMIN). */
+  isStaffRole(role: UserRole): boolean {
+    return role === 'SUPER_ADMIN' || role === 'TEACHER';
   }
 }

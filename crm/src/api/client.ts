@@ -87,7 +87,7 @@ export const postsApi = {
     if (params?.status) q.set('status', params.status);
     return api<{ items: unknown[]; total: number }>(`/posts/crm/list?${q}`);
   },
-  get: (id: string) => api<unknown>(`/posts/${id}`),
+  get: (id: string) => api<unknown>(`/posts/crm/${id}`),
   create: (body: Record<string, unknown>) => api<unknown>('/posts', { method: 'POST', body: JSON.stringify(body) }),
   update: (id: string, body: Record<string, unknown>) =>
     api<unknown>(`/posts/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
@@ -230,37 +230,80 @@ export const mailApi = {
   deleteSent: (id: string) => api<void>(`/mail/sent/${id}`, { method: 'DELETE' }),
 };
 
-export type Teacher = {
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'TEACHER' | 'STUDENT';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION';
+
+export type UserAccount = {
   id: string;
-  name: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  role: UserRole;
+  status: UserStatus;
+  emailVerified?: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  avatar?: string | null;
   title?: string | null;
   bio?: string | null;
-  avatarPath?: string | null;
-  specializations: string[];
+  specializations?: string[];
   yearsExperience?: number | null;
-  isPublic: boolean;
-  orderIndex: number;
-  createdAt: string;
-  updatedAt: string;
+  teacherPublic?: boolean;
+  teacherOrderIndex?: number;
 };
 
-export const teachersApi = {
-  list: (params?: { page?: number; limit?: number }) => {
+export type UserCreateBody = {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: UserRole;
+  status?: UserStatus;
+  title?: string;
+  bio?: string;
+  specializations?: string[];
+  yearsExperience?: number;
+  teacherPublic?: boolean;
+  teacherOrderIndex?: number;
+};
+
+export type UserUpdateBody = Partial<{
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: UserRole;
+  status: UserStatus;
+  title: string;
+  bio: string;
+  specializations: string[];
+  yearsExperience: number;
+  teacherPublic: boolean;
+  teacherOrderIndex: number;
+}>;
+
+export const usersApi = {
+  list: (params?: { page?: number; limit?: number; role?: string }) => {
     const q = new URLSearchParams();
     if (params?.page) q.set('page', String(params.page));
     if (params?.limit) q.set('limit', String(params.limit));
-    return api<{ items: Teacher[]; total: number }>(`/teachers/crm/list?${q}`);
+    if (params?.role) q.set('role', params.role);
+    return api<{ items: UserAccount[]; total: number; page: number; limit: number }>(`/users?${q}`);
   },
-  get: (id: string) => api<Teacher>(`/teachers/${id}`),
-  create: (body: Partial<Teacher>) => api<Teacher>('/teachers', { method: 'POST', body: JSON.stringify(body) }),
-  update: (id: string, body: Partial<Teacher>) =>
-    api<Teacher>(`/teachers/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-  delete: (id: string) => api<void>(`/teachers/${id}`, { method: 'DELETE' }),
+  get: (id: string) => api<UserAccount>(`/users/${id}`),
+  create: (body: UserCreateBody) =>
+    api<UserAccount>('/users', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: UserUpdateBody) =>
+    api<UserAccount>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: (id: string) => api<{ id: string; email: string }>(`/users/${id}`, { method: 'DELETE' }),
   uploadAvatar: async (id: string, file: File): Promise<{ avatarPath: string }> => {
     const token = getToken();
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${API_BASE}/teachers/${id}/avatar`, {
+    const res = await fetch(`${API_BASE}/users/${id}/avatar`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: form,
@@ -273,8 +316,9 @@ export const teachersApi = {
     }
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }));
-      throw new Error(err.message || 'Upload thất bại');
+      throw new Error((err as { message?: string }).message || 'Tải ảnh thất bại');
     }
     return res.json();
   },
 };
+

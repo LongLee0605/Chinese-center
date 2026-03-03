@@ -23,7 +23,8 @@ function levelToLabel(level: string): string {
 export default function CoursesPage() {
   const [level, setLevel] = useState('all');
   const { data, isLoading, isError } = useGetCoursesQuery();
-  const items = data?.items ?? [];
+  const rawItems = data?.items;
+  const items = Array.isArray(rawItems) ? rawItems : [];
 
   const filters = useMemo(() => {
     const levels = [...new Set(items.map((c) => (c.level || '').trim()).filter(Boolean))];
@@ -49,18 +50,18 @@ export default function CoursesPage() {
 
   const filtered = level === 'all'
     ? items
-    : items.filter((c) => (c.level || '').trim() === level);
+    : items.filter((c) => (c?.level || '').trim() === level);
 
   const coursesForCard = filtered.map((c) => ({
-    id: c.id,
-    name: c.name,
-    nameZh: c.nameZh ?? undefined,
-    level: c.level ?? '',
-    duration: c.duration ?? 0,
-    price: c.price ?? 0,
-    slug: c.slug,
-    thumbnail: c.thumbnail ?? null,
-    description: c.description ?? undefined,
+    id: String(c?.id ?? ''),
+    name: String(c?.name ?? ''),
+    nameZh: c?.nameZh != null ? c.nameZh : undefined,
+    level: String(c?.level ?? ''),
+    duration: Number(c?.duration ?? 0),
+    price: Number(c?.price ?? 0),
+    slug: String(c?.slug ?? ''),
+    thumbnail: c?.thumbnail != null ? c.thumbnail : null,
+    description: c?.description != null ? c.description : undefined,
   }));
 
   return (

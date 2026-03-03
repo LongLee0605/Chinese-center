@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
+import { canAccessWithGuest, type UserRoleOrGuest } from '../../core/visibility/visibility.util';
 
 @Injectable()
 export class QuizzesService {
@@ -20,6 +21,8 @@ export class QuizzesService {
         timeLimitMinutes: dto.timeLimitMinutes,
         passingScore: dto.passingScore ?? 60,
         isPublished: dto.isPublished ?? false,
+        allowGuest: dto.allowGuest ?? false,
+        visibleToRoles: Array.isArray(dto.visibleToRoles) ? dto.visibleToRoles : [],
       },
     });
   }
@@ -42,7 +45,7 @@ export class QuizzesService {
     return { items, total, page, limit };
   }
 
-  async findOne(id: string, includeAnswers = false) {
+  async findOne(id: string, includeAnswers = false, userRole: UserRoleOrGuest = null) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id },
       include: {
@@ -57,6 +60,8 @@ export class QuizzesService {
       },
     });
     if (!quiz) throw new NotFoundException('Bài test không tồn tại');
+    const allowed = canAccessWithGuest(quiz.allowGuest, quiz.visibleToRoles, userRole);
+    if (!allowed) throw new ForbiddenException('Bạn không có quyền xem/làm bài test này.');
     if (!includeAnswers && quiz.questions) {
       (quiz as any).questions = (quiz.questions as any[]).map((q) => ({
         ...q,
@@ -66,32 +71,36 @@ export class QuizzesService {
     return quiz;
   }
 
-  async findPublished(params: { page?: number; limit?: number } = {}) {
+  async findPublished(params: { page?: number; limit?: number } = {}, userRole: UserRoleOrGuest = null) {
     const { page = 1, limit = 50 } = params;
-    const where = { isPublished: true };
-    const [items, total] = await Promise.all([
-      this.prisma.quiz.findMany({
-        where,
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          description: true,
-          quizType: true,
-          timeLimitMinutes: true,
-          passingScore: true,
-          _count: { select: { questions: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.quiz.count({ where }),
-    ]);
+    const published = await this.prisma.quiz.findMany({
+      where: { isPublished: true },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        description: true,
+        quizType: true,
+        timeLimitMinutes: true,
+        passingScore: true,
+        allowGuest: true,
+        visibleToRoles: true,
+        _count: { select: { questions: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
+    const allowed = published.filter((q) =>
+      canAccessWithGuest(Boolean(q.allowGuest), q.visibleToRoles ?? [], userRole),
+    );
+    const total = allowed.length;
+    const start = (page - 1) * limit;
+    const paged = allowed.slice(start, start + limit);
+    const items = paged.map(({ allowGuest, visibleToRoles, ...rest }) => rest);
     return { items, total, page, limit };
   }
 
-  async findBySlug(slug: string) {
+  async findBySlug(slug: string, userRole: UserRoleOrGuest = null) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { slug, isPublished: true },
       include: {
@@ -102,11 +111,13 @@ export class QuizzesService {
       },
     });
     if (!quiz) throw new NotFoundException('Bài test không tồn tại');
+    const allowed = canAccessWithGuest(quiz.allowGuest, quiz.visibleToRoles, userRole);
+    if (!allowed) throw new ForbiddenException('Bạn không có quyền xem/làm bài test này.');
     return quiz;
   }
 
-  async update(id: string, dto: UpdateQuizDto) {
-    await this.findOne(id, true);
+  async update(id: string, dto: UpdateQuizDto, userRole: UserRoleOrGuest) {
+    await this.findOne(id, true, userRole);
     return this.prisma.quiz.update({
       where: { id },
       data: {
@@ -118,19 +129,21 @@ export class QuizzesService {
         ...(dto.lessonId != null && { lessonId: dto.lessonId }),
         ...(dto.timeLimitMinutes != null && { timeLimitMinutes: dto.timeLimitMinutes }),
         ...(dto.passingScore != null && { passingScore: dto.passingScore }),
+        ...(dto.allowGuest !== undefined && { allowGuest: dto.allowGuest }),
+        ...(dto.visibleToRoles !== undefined && { visibleToRoles: Array.isArray(dto.visibleToRoles) ? dto.visibleToRoles : [] }),
         ...(dto.isPublished != null && { isPublished: dto.isPublished }),
       },
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id, true);
+  async remove(id: string, userRole: UserRoleOrGuest) {
+    await this.findOne(id, true, userRole);
     return this.prisma.quiz.delete({ where: { id } });
   }
 
   // ----- Questions -----
-  async addQuestion(quizId: string, dto: CreateQuestionDto) {
-    await this.findOne(quizId, true);
+  async addQuestion(quizId: string, dto: CreateQuestionDto, userRole: UserRoleOrGuest) {
+    await this.findOne(quizId, true, userRole);
     const maxOrder = await this.prisma.quizQuestion
       .aggregate({ where: { quizId }, _max: { orderIndex: true } })
       .then((r) => (r._max.orderIndex ?? -1) + 1);
@@ -171,13 +184,15 @@ export class QuizzesService {
   async submitAttempt(
     quizId: string,
     answers: Record<string, string>,
-    opts?: { userId?: string; guestName?: string; guestEmail?: string },
+    opts?: { userId?: string; guestName?: string; guestEmail?: string; userRole?: UserRoleOrGuest },
   ) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       include: { questions: true },
     });
     if (!quiz) throw new NotFoundException('Bài test không tồn tại');
+    const allowed = canAccessWithGuest(quiz.allowGuest, quiz.visibleToRoles, opts?.userRole ?? null);
+    if (!allowed) throw new ForbiddenException('Bạn không có quyền làm bài test này.');
     const mcTypes = ['MULTIPLE_CHOICE', 'TRUE_FALSE'];
     let mcCorrect = 0;
     let mcTotal = 0;

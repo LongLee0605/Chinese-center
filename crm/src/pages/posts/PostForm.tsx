@@ -27,7 +27,15 @@ export default function PostForm() {
     body: '',
     coverImage: '',
     status: 'DRAFT',
+    allowGuest: true,
+    visibleToRoles: [] as string[],
   });
+
+  const ROLE_OPTIONS = [
+    { value: 'SUPER_ADMIN', label: 'Super Admin' },
+    { value: 'TEACHER', label: 'Giảng viên' },
+    { value: 'STUDENT', label: 'Học viên' },
+  ];
 
   useEffect(() => {
     if (!isNew && id) {
@@ -35,6 +43,7 @@ export default function PostForm() {
         .get(id)
         .then((p: unknown) => {
           const data = p as Record<string, unknown>;
+          const roles = Array.isArray(data.visibleToRoles) ? data.visibleToRoles : [];
           setForm({
             title: String(data.title ?? ''),
             slug: String(data.slug ?? ''),
@@ -42,6 +51,8 @@ export default function PostForm() {
             body: bodyHtmlForDisplay(String(data.body ?? '')),
             coverImage: String(data.coverImage ?? ''),
             status: String(data.status ?? 'DRAFT'),
+            allowGuest: data.allowGuest !== false,
+            visibleToRoles: roles.filter((r: string) => r !== 'ADMIN'),
           });
         })
         .catch(console.error)
@@ -76,6 +87,8 @@ export default function PostForm() {
       ...form,
       body: bodyHtmlForSave(form.body),
       publishedAt: form.status === 'PUBLISHED' ? new Date().toISOString() : undefined,
+      allowGuest: form.allowGuest,
+      visibleToRoles: form.visibleToRoles,
     };
     (isNew ? postsApi.create(payload) : postsApi.update(id!, payload))
       .then(() => {
@@ -184,6 +197,42 @@ export default function PostForm() {
             <option value="PUBLISHED">Xuất bản</option>
             <option value="ARCHIVED">Lưu trữ</option>
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Hiển thị cho khách</label>
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.allowGuest}
+              onChange={(e) => setForm((f) => ({ ...f, allowGuest: e.target.checked }))}
+              className="rounded border-gray-300"
+            />
+            <span className="text-sm">Cho phép khách (chưa đăng nhập) xem bài viết này trên website</span>
+          </label>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Vai trò được xem</label>
+          <p className="text-xs text-gray-500 mb-2">Chọn vai trò được phép xem bài viết này. Để trống (không chọn) = tất cả vai trò.</p>
+          <div className="flex flex-wrap gap-4">
+            {ROLE_OPTIONS.map((opt) => (
+              <label key={opt.value} className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.visibleToRoles.includes(opt.value)}
+                  onChange={(e) => {
+                    setForm((f) => ({
+                      ...f,
+                      visibleToRoles: e.target.checked
+                        ? [...f.visibleToRoles, opt.value]
+                        : f.visibleToRoles.filter((r) => r !== opt.value),
+                    }));
+                  }}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">{opt.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
         <div className="flex gap-2">
           <button

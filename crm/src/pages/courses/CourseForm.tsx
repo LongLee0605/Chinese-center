@@ -47,7 +47,15 @@ export default function CourseForm() {
     status: 'DRAFT',
     slug: '',
     thumbnail: '',
+    allowGuest: false,
+    visibleToRoles: [] as string[],
   });
+
+  const ROLE_OPTIONS = [
+    { value: 'SUPER_ADMIN', label: 'Super Admin' },
+    { value: 'TEACHER', label: 'Giảng viên' },
+    { value: 'STUDENT', label: 'Học viên' },
+  ];
 
   useEffect(() => {
     if (!isNew && id) {
@@ -70,6 +78,8 @@ export default function CourseForm() {
             status: String(p.status ?? 'DRAFT'),
             slug: String(p.slug ?? ''),
             thumbnail: String(p.thumbnail ?? ''),
+            allowGuest: Boolean(p.allowGuest),
+            visibleToRoles: (Array.isArray(p.visibleToRoles) ? p.visibleToRoles : []).filter((r: string) => r !== 'ADMIN'),
           });
         })
         .catch(() => show('error', 'Không tải được khóa học.'))
@@ -87,6 +97,8 @@ export default function CourseForm() {
         duration: form.duration || 0,
         price: form.price || 0,
         maxStudents: form.maxStudents || 20,
+        allowGuest: form.allowGuest,
+        visibleToRoles: form.visibleToRoles,
       };
       if (isNew) {
         const c = (await coursesApi.create(payload)) as { id: string };
@@ -260,6 +272,42 @@ export default function CourseForm() {
                 <option value="DRAFT">Nháp</option>
                 <option value="PUBLISHED">Xuất bản</option>
               </select>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="allowGuest"
+              checked={form.allowGuest}
+              onChange={(e) => setForm((f) => ({ ...f, allowGuest: e.target.checked }))}
+              className="rounded border-gray-300"
+            />
+            <label htmlFor="allowGuest" className="text-sm font-medium text-gray-700">
+              Cho phép khách (chưa đăng nhập) xem khóa học
+            </label>
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò được xem</label>
+            <p className="text-xs text-gray-500 mb-2">Chọn vai trò được phép xem khóa học. Để trống = tất cả vai trò.</p>
+            <div className="flex flex-wrap gap-4">
+              {ROLE_OPTIONS.map((opt) => (
+                <label key={opt.value} className="inline-flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.visibleToRoles.includes(opt.value)}
+                    onChange={(e) => {
+                      setForm((f) => ({
+                        ...f,
+                        visibleToRoles: e.target.checked
+                          ? [...f.visibleToRoles, opt.value]
+                          : f.visibleToRoles.filter((r) => r !== opt.value),
+                      }));
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">{opt.label}</span>
+                </label>
+              ))}
             </div>
           </div>
           <div className="mt-4">

@@ -17,13 +17,18 @@ function levelLabel(level: string): string {
 
 export default function CourseDetailPage() {
   const { courseSlug } = useParams<{ courseSlug: string }>();
-  const { data: course, isLoading, isError } = useGetCourseBySlugQuery(courseSlug!, { skip: !courseSlug });
+  const { data: course, isLoading, isError, error } = useGetCourseBySlugQuery(courseSlug!, { skip: !courseSlug });
+  const forbidden = isError && error && typeof error === 'object' && 'status' in error && (error as { status: number }).status === 403;
 
   if (!courseSlug || isError || (!isLoading && !course)) {
     return (
       <div className="min-h-screen bg-primary-50 section-padding">
         <div className="container-narrow text-center">
-          <p className="text-primary-600">Không tìm thấy khóa học.</p>
+          {forbidden ? (
+            <p className="text-primary-600">Bạn không có quyền xem khóa học này.</p>
+          ) : (
+            <p className="text-primary-600">Không tìm thấy khóa học.</p>
+          )}
           <Link to="/khoa-hoc" className="mt-4 inline-block text-accent-600 font-medium">
             ← Về danh sách khóa học
           </Link>

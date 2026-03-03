@@ -16,13 +16,33 @@ import Dashboard from './pages/Dashboard';
 import Mail from './pages/Mail';
 import LeadsList from './pages/leads/LeadsList';
 import LeadDetail from './pages/leads/LeadDetail';
-import TeachersList from './pages/teachers/TeachersList';
-import TeacherForm from './pages/teachers/TeacherForm';
+import AccountsList from './pages/accounts/AccountsList';
+import AccountForm from './pages/accounts/AccountForm';
+import AccountDetail from './pages/accounts/AccountDetail';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   if (loading) return <div className="p-8 text-center">Đang tải...</div>;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'STUDENT' || user.role === 'ADMIN') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-slate-800">Bạn không có quyền truy cập CRM</p>
+          <p className="text-slate-600 mt-2 text-sm">
+            {user.role === 'STUDENT' ? 'Học viên chỉ có thể xem bài giảng và làm bài test trên website.' : 'Vai trò Admin đã bỏ quyền CRM.'}
+          </p>
+          <button
+            type="button"
+            onClick={logout}
+            className="mt-6 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    );
+  }
   return <>{children}</>;
 }
 
@@ -54,9 +74,10 @@ export default function App() {
           <Route path="quizzes/:id" element={<QuizDetail />} />
           <Route path="leads" element={<LeadsList />} />
           <Route path="leads/:id" element={<LeadDetail />} />
-          <Route path="teachers" element={<TeachersList />} />
-          <Route path="teachers/new" element={<TeacherForm />} />
-          <Route path="teachers/:id" element={<TeacherForm />} />
+          <Route path="accounts" element={<AccountsList />} />
+          <Route path="accounts/new" element={<AccountForm />} />
+          <Route path="accounts/:id/edit" element={<AccountForm />} />
+          <Route path="accounts/:id" element={<AccountDetail />} />
           <Route path="mail" element={<Mail />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

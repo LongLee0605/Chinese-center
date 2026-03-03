@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, IsBoolean } from 'class-validator';
 import { PostStatus } from '@prisma/client';
 
 export class CreatePostDto {
@@ -26,4 +26,15 @@ export class CreatePostDto {
 
   @IsOptional()
   publishedAt?: string; // ISO date
+
+  /** Cho phép khách (chưa đăng nhập) xem bài viết này. */
+  @IsOptional()
+  @IsBoolean()
+  allowGuest?: boolean;
+
+  /** Vai trò được xem. Rỗng = tất cả. */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  visibleToRoles?: string[];
 }

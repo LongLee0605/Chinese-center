@@ -1,16 +1,40 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FileText, BookOpen, ClipboardList, LayoutDashboard, LogOut, Mail, Inbox, Users, LayoutGrid } from 'lucide-react';
+import { FileText, BookOpen, ClipboardList, LayoutDashboard, LogOut, Mail, Inbox, LayoutGrid, UserCog } from 'lucide-react';
 
-const nav = [
-  { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
-  { to: '/posts', label: 'Bài viết', icon: FileText },
-  { to: '/courses', label: 'Khóa học', icon: BookOpen },
-  { to: '/quizzes', label: 'Bài test', icon: ClipboardList },
-  { to: '/teachers', label: 'Giáo viên', icon: Users },
-  { to: '/leads', label: 'Email đăng ký', icon: Inbox },
-  { to: '/mail', label: 'Gửi email', icon: Mail },
-];
+function getNav(role: string) {
+  const base = [
+    { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
+    { to: '/posts', label: 'Bài viết', icon: FileText },
+    { to: '/courses', label: 'Khóa học', icon: BookOpen },
+    { to: '/quizzes', label: 'Bài test', icon: ClipboardList },
+    { to: '/leads', label: 'Email đăng ký', icon: Inbox },
+    { to: '/mail', label: 'Gửi email', icon: Mail },
+  ];
+  if (role === 'SUPER_ADMIN') {
+    return [
+      { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
+      { to: '/accounts', label: 'Tài khoản', icon: UserCog },
+      { to: '/posts', label: 'Bài viết', icon: FileText },
+      { to: '/courses', label: 'Khóa học', icon: BookOpen },
+      { to: '/quizzes', label: 'Bài test', icon: ClipboardList },
+      { to: '/leads', label: 'Email đăng ký', icon: Inbox },
+      { to: '/mail', label: 'Gửi email', icon: Mail },
+    ];
+  }
+  if (role === 'TEACHER') {
+    return [
+      { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
+      { to: '/accounts', label: 'Tài khoản', icon: UserCog },
+      { to: '/posts', label: 'Bài viết', icon: FileText },
+      { to: '/courses', label: 'Khóa học', icon: BookOpen },
+      { to: '/quizzes', label: 'Bài test', icon: ClipboardList },
+      { to: '/leads', label: 'Email đăng ký', icon: Inbox },
+      { to: '/mail', label: 'Gửi email', icon: Mail },
+    ];
+  }
+  return base;
+}
 
 function getInitials(firstName?: string, lastName?: string): string {
   const a = firstName?.trim().slice(0, 1) ?? '';
@@ -37,7 +61,7 @@ export default function Layout() {
           </Link>
         </div>
         <nav className="flex-1 overflow-y-auto py-3 px-2">
-          {nav.map(({ to, label, icon: Icon }) => {
+          {getNav(user?.role ?? '').map(({ to, label, icon: Icon }) => {
             const isActive =
               location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
             return (

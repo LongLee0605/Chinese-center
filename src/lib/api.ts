@@ -27,17 +27,46 @@ export function bodyHtmlForDisplay(html: string): string {
   return out;
 }
 
+/** Key localStorage cho token (tách với CRM). */
+export const AUTH_STORAGE_KEY = 'website_token';
+/** Key localStorage cho user (JSON). */
+export const AUTH_USER_KEY = 'website_user';
+
+export function getAuthToken(): string | null {
+  return localStorage.getItem(AUTH_STORAGE_KEY);
+}
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers as Record<string, string>) },
-  });
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
     throw new Error(err.message || 'Request failed');
   }
   return res.json();
 }
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+};
+
+export const authApi = {
+  login: (email: string, password: string) =>
+    api<{ access_token: string; user: AuthUser }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  me: () => api<AuthUser>('/auth/me'),
+};
 
 export type LeadType = 'TU_VAN' | 'DANG_KY_HOC_THU';
 

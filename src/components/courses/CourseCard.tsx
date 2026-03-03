@@ -44,7 +44,7 @@ export default function CourseCard({ course, className }: CourseCardProps) {
         <p className="mt-2 text-sm text-primary-600 line-clamp-2">{course.description}</p>
       )}
       <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-primary-500">
-        <span>{course.duration} giờ</span>
+        <span>{course.duration} buổi</span>
         <span>•</span>
         <span className="font-semibold text-accent-600">{formatCurrency(course.price)}</span>
       </div>

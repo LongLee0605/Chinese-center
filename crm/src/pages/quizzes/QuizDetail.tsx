@@ -32,6 +32,8 @@ type Quiz = {
   timeLimitMinutes?: number;
   passingScore: number;
   isPublished: boolean;
+  allowGuest?: boolean;
+  visibleToRoles?: string[];
   questions?: Question[];
 };
 
@@ -52,7 +54,15 @@ export default function QuizDetail() {
     timeLimitMinutes: 0,
     passingScore: 60,
     isPublished: false,
+    allowGuest: false,
+    visibleToRoles: [] as string[],
   });
+
+  const ROLE_OPTIONS = [
+    { value: 'SUPER_ADMIN', label: 'Super Admin' },
+    { value: 'TEACHER', label: 'Giảng viên' },
+    { value: 'STUDENT', label: 'Học viên' },
+  ];
   const [questionForm, setQuestionForm] = useState({
     questionText: '',
     options: ['', ''],
@@ -87,6 +97,8 @@ export default function QuizDetail() {
         timeLimitMinutes: q.timeLimitMinutes ?? 0,
         passingScore: q.passingScore ?? 60,
         isPublished: q.isPublished ?? false,
+        allowGuest: q.allowGuest ?? false,
+        visibleToRoles: (Array.isArray(q.visibleToRoles) ? q.visibleToRoles : []).filter((r: string) => r !== 'ADMIN'),
       });
     }).catch(console.error);
   }
@@ -330,6 +342,39 @@ export default function QuizDetail() {
             onChange={(e) => setQuizForm((f) => ({ ...f, isPublished: e.target.checked }))}
           />
           <label>Xuất bản (hiện trên website)</label>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={quizForm.allowGuest}
+            onChange={(e) => setQuizForm((f) => ({ ...f, allowGuest: e.target.checked }))}
+            className="rounded border-gray-300"
+          />
+          <label>Cho phép khách (chưa đăng nhập) xem và làm bài</label>
+        </div>
+        <div className="mt-3">
+          <p className="text-sm font-medium text-gray-700 mb-1">Vai trò được xem / làm bài</p>
+          <p className="text-xs text-gray-500 mb-2">Để trống = tất cả vai trò.</p>
+          <div className="flex flex-wrap gap-4">
+            {ROLE_OPTIONS.map((opt) => (
+              <label key={opt.value} className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={quizForm.visibleToRoles.includes(opt.value)}
+                  onChange={(e) => {
+                    setQuizForm((f) => ({
+                      ...f,
+                      visibleToRoles: e.target.checked
+                        ? [...f.visibleToRoles, opt.value]
+                        : f.visibleToRoles.filter((r) => r !== opt.value),
+                    }));
+                  }}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">{opt.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
         <button type="submit" className="px-4 py-2 bg-gray-800 text-white rounded">
           Lưu cài đặt

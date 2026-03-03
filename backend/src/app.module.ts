@@ -10,6 +10,7 @@ import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { MailModule } from './modules/mail/mail.module';
 import { LeadsModule } from './modules/leads/leads.module';
 import { TeachersModule } from './modules/teachers/teachers.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   controllers: [HealthController],
@@ -24,6 +25,7 @@ import { TeachersModule } from './modules/teachers/teachers.module';
     MailModule,
     LeadsModule,
     TeachersModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsBoolean, IsEnum, Min } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsBoolean, IsEnum, IsArray, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { QuizType } from '@prisma/client';
 
@@ -41,4 +41,15 @@ export class CreateQuizDto {
   @Type(() => Boolean)
   @IsBoolean()
   isPublished?: boolean;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  allowGuest?: boolean;
+
+  /** Vai trò được xem/làm bài. Rỗng = tất cả. */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  visibleToRoles?: string[];
 }

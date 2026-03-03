@@ -58,15 +58,57 @@ model User {
   firstName     String
   lastName      String
   phone         String?
-  avatar        String?
+  avatar        String?  // Ảnh đại diện (dùng cho giảng viên hiển thị web)
   role          UserRole @default(STUDENT)
   status        UserStatus @default(PENDING_VERIFICATION)
   emailVerified Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  posts         Post[]
-  quizAttempts  QuizAttempt[]
+  // Trường dùng khi role = TEACHER (hiển thị đội ngũ trên website)
+  title              String?   // Chức danh: Giáo viên trưởng, GV bản ngữ...
+  bio                String?   @db.Text
+  specializations    String[]  @default([]) // ["HSK", "Giao tiếp", "Thiếu nhi"]
+  yearsExperience    Int?
+  teacherPublic      Boolean   @default(true) // Hiển thị trên trang Đội ngũ giáo viên
+  teacherOrderIndex  Int       @default(0)
+
+  posts            Post[]
+  quizAttempts     QuizAttempt[]
+  courseEnrollments CourseEnrollment[]
+  lessonProgress   LessonProgress[]
+}
+
+// Khóa học đã mua / đăng ký (học viên)
+model CourseEnrollment {
+  id         String   @id @default(cuid())
+  userId     String
+  courseId   String
+  enrolledAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("course_enrollments")
+}
+
+// Bài học đã học (đánh dấu hoàn thành)
+model LessonProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  lessonId    String
+  completedAt DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+  @@map("lesson_progress")
 }
 
 // --------------- Blog (Bài viết) ---------------
@@ -77,11 +119,13 @@ model Post {
   excerpt     String?    @db.Text
   body        String?    @db.Text
   coverImage  String?
-  status      PostStatus @default(DRAFT)
-  publishedAt DateTime?
-  authorId    String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  status         PostStatus @default(DRAFT)
+  publishedAt    DateTime?
+  authorId       String
+  allowGuest     Boolean    @default(true) // Cho phép khách (chưa đăng nhập) xem bài viết này
+  visibleToRoles String[]   @default([])   // Rỗng = tất cả role; không rỗng = chỉ các role trong danh sách (và Super Admin) được xem
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -107,11 +151,14 @@ model Course {
   status             String   @default("DRAFT")
   slug               String   @unique
   thumbnail          String?
+  allowGuest         Boolean  @default(false) // Khách (chưa đăng nhập) có thể xem khóa này khi status = PUBLISHED
+  visibleToRoles     String[] @default([])   // Rỗng = tất cả role; không rỗng = chỉ các role trong danh sách (và Super Admin) được xem
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  lessons Lesson[]
-  quizzes Quiz[]
+  lessons    Lesson[]
+  quizzes    Quiz[]
+  enrollments CourseEnrollment[]
 }
 
 model Lesson {
@@ -128,8 +175,9 @@ model Lesson {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  quizzes Quiz[]
+  course   Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quizzes  Quiz[]
+  progress LessonProgress[]
 
   @@unique([courseId, slug])
   @@index([courseId])
@@ -148,6 +196,8 @@ model Quiz {
   timeLimitMinutes Int?
   passingScore     Int      @default(60)
   isPublished      Boolean  @default(false)
+  allowGuest       Boolean  @default(false) // Khách có thể xem/làm bài test này
+  visibleToRoles   String[] @default([])    // Rỗng = tất cả role; không rỗng = chỉ các role trong danh sách (và Super Admin) được xem/làm
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -196,25 +246,6 @@ model QuizAttempt {
   @@index([userId])
   @@index([quizId])
   @@map("quiz_attempts")
-}
-
-// --------------- Đội ngũ giáo viên (public trên web) ---------------
-model Teacher {
-  id               String   @id @default(cuid())
-  name             String
-  title            String?  // Chức danh: Giáo viên trưởng, GV bản ngữ...
-  bio              String?  @db.Text
-  avatarPath       String?  // Đường dẫn file: /uploads/teachers/xxx.jpg
-  specializations  String[] @default([]) // ["HSK", "Giao tiếp", "Thiếu nhi"]
-  yearsExperience  Int?
-  isPublic         Boolean  @default(true)
-  orderIndex       Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@index([isPublic])
-  @@index([orderIndex])
-  @@map("teachers")
 }
 
 // --------------- Email đã gửi (CRM) ---------------

@@ -4,7 +4,13 @@ import { quizzesApi } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import { Trash2 } from 'lucide-react';
 
-type Question = { id: string; type: string; questionText: string; options: string[] | null };
+type Question = {
+  id: string;
+  type: string;
+  questionText: string;
+  options: string[] | null;
+  correctAnswer?: string | null;
+};
 type Attempt = {
   id: string;
   score: number | null;
@@ -15,6 +21,9 @@ type Attempt = {
   quiz: { id: string; title: string; questions: Question[] };
   user?: { firstName: string; lastName: string; email: string };
 };
+
+const MC_TYPES = ['MULTIPLE_CHOICE', 'TRUE_FALSE'];
+const ESSAY_TYPES = ['ESSAY', 'SHORT_ANSWER'];
 
 export default function QuizAttemptDetail() {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -76,7 +85,8 @@ export default function QuizAttemptDetail() {
 
   const displayName = attempt.guestName || (attempt.user ? `${attempt.user.firstName} ${attempt.user.lastName}` : '—');
   const displayEmail = attempt.guestEmail || attempt.user?.email || '—';
-  const isEssay = (t: string) => t === 'ESSAY' || t === 'SHORT_ANSWER';
+  const isMc = (t: string) => MC_TYPES.includes(t);
+  const isEssay = (t: string) => ESSAY_TYPES.includes(t);
 
   const quizId = attempt.quiz.id;
 
@@ -105,15 +115,46 @@ export default function QuizAttemptDetail() {
       </p>
 
       <div className="space-y-6 mb-8">
-        {attempt.quiz.questions.map((q) => (
-          <div key={q.id} className="border rounded-lg p-4 bg-gray-50">
-            <p className="font-medium text-gray-900 mb-2">{q.questionText}</p>
-            <p className="text-sm text-gray-500 mb-1">
-              {isEssay(q.type) ? 'Câu trả lời (tự luận):' : 'Lựa chọn:'}
-            </p>
-            <p className="text-gray-900 whitespace-pre-wrap">{attempt.answers?.[q.id] ?? '—'}</p>
-          </div>
-        ))}
+        {attempt.quiz.questions.map((q) => {
+          const userAnswer = attempt.answers?.[q.id] ?? '';
+          const correctAnswer = q.correctAnswer ?? '';
+          const isCorrect = isMc(q.type) && userAnswer === correctAnswer;
+
+          return (
+            <div key={q.id} className="border rounded-lg p-4 bg-gray-50">
+              <p className="font-medium text-gray-900 mb-2">{q.questionText}</p>
+              <p className="text-sm text-gray-500 mb-1">
+                {isEssay(q.type) ? 'Câu trả lời (tự luận):' : 'Đáp án người dùng chọn:'}
+              </p>
+              {isMc(q.type) ? (
+                <div className="space-y-1">
+                  {userAnswer ? (
+                    <>
+                      <p
+                        className={
+                          isCorrect
+                            ? 'text-green-700 font-medium'
+                            : 'text-red-600 line-through'
+                        }
+                      >
+                        {userAnswer}
+                      </p>
+                      {!isCorrect && correctAnswer && (
+                        <p className="text-green-700 font-medium mt-1">
+                          Đáp án đúng: {correctAnswer}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-gray-500">— Không chọn</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-900 whitespace-pre-wrap">{userAnswer || '—'}</p>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <form onSubmit={handleSaveScore} className="bg-white border rounded-lg p-4">

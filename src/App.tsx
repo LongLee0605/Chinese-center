@@ -16,6 +16,8 @@ import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import CourseDetailPage from './pages/CourseDetailPage';
 import LessonDetailPage from './pages/LessonDetailPage';
+import LoginPage from './pages/LoginPage';
+import AccountPage from './pages/AccountPage';
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
       <Layout>
         <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/dang-nhap" element={<LoginPage />} />
+        <Route path="/tai-khoan" element={<AccountPage />} />
         <Route path="/khoa-hoc" element={<CoursesPage />} />
         <Route path="/khoa-hoc/:courseSlug/bai-hoc/:lessonSlug" element={<LessonDetailPage />} />
         <Route path="/khoa-hoc/:courseSlug" element={<CourseDetailPage />} />

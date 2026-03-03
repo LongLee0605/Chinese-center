@@ -10,17 +10,18 @@ const PREVIEW_LIMIT = 6;
 
 export default function CoursePreview() {
   const { data, isLoading, isError } = useGetCoursesQuery();
-  const items = data?.items ?? [];
-  const courses = items.slice(0, PREVIEW_LIMIT).map((c) => ({
-    id: c.id,
-    name: c.name,
-    nameZh: c.nameZh ?? undefined,
-    level: c.level ?? '',
-    duration: c.duration ?? 0,
-    price: c.price ?? 0,
-    slug: c.slug,
-    thumbnail: c.thumbnail ?? null,
-    description: c.description ?? undefined,
+  const rawItems = data?.items;
+  const items = Array.isArray(rawItems) ? rawItems : [];
+  const courses = items.slice(0, PREVIEW_LIMIT).map((c: Record<string, unknown>) => ({
+    id: String(c?.id ?? ''),
+    name: String(c?.name ?? ''),
+    nameZh: c?.nameZh != null ? String(c.nameZh) : undefined,
+    level: String(c?.level ?? ''),
+    duration: Number(c?.duration ?? 0),
+    price: Number(c?.price ?? 0),
+    slug: String(c?.slug ?? ''),
+    thumbnail: c?.thumbnail != null ? String(c.thumbnail) : null,
+    description: c?.description != null ? String(c.description) : undefined,
   }));
 
   return (

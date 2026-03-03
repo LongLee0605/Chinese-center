@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { canAccessWithGuest, type UserRoleOrGuest } from '../../core/visibility/visibility.util';
 
 @Injectable()
 export class LessonsService {
@@ -23,7 +24,14 @@ export class LessonsService {
     });
   }
 
-  async findByCourse(courseId: string, publishedOnly = false) {
+  async findByCourse(courseId: string, publishedOnly = false, userRole: UserRoleOrGuest = null) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { allowGuest: true, visibleToRoles: true },
+    });
+    if (!course) throw new NotFoundException('Khóa học không tồn tại');
+    const allowed = canAccessWithGuest(course.allowGuest, course.visibleToRoles, userRole);
+    if (!allowed) throw new ForbiddenException('Bạn không có quyền xem nội dung khóa học này.');
     const where: { courseId: string; isPublished?: boolean } = { courseId };
     if (publishedOnly) where.isPublished = true;
     return this.prisma.lesson.findMany({
@@ -32,17 +40,21 @@ export class LessonsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userRole: UserRoleOrGuest = null) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id },
-      include: { course: { select: { id: true, name: true, slug: true } } },
+      include: { course: { select: { id: true, name: true, slug: true, allowGuest: true, visibleToRoles: true } } },
     });
     if (!lesson) throw new NotFoundException('Bài học không tồn tại');
-    return lesson;
+    const course = lesson.course as { allowGuest: boolean; visibleToRoles: string[] };
+    const allowed = canAccessWithGuest(course.allowGuest, course.visibleToRoles, userRole);
+    if (!allowed) throw new ForbiddenException('Bạn không có quyền xem bài học này.');
+    const { allowGuest, visibleToRoles, ...courseInfo } = lesson.course as { id: string; name: string; slug: string; allowGuest: boolean; visibleToRoles: string[] };
+    return { ...lesson, course: courseInfo };
   }
 
-  async update(id: string, dto: UpdateLessonDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateLessonDto, userRole: UserRoleOrGuest = null) {
+    await this.findOne(id, userRole);
     return this.prisma.lesson.update({
       where: { id },
       data: {
@@ -58,8 +70,8 @@ export class LessonsService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, userRole: UserRoleOrGuest = null) {
+    await this.findOne(id, userRole);
     return this.prisma.lesson.delete({ where: { id } });
   }
 

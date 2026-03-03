@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { QuizzesService } from './quizzes.service';
@@ -16,6 +17,7 @@ import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAttemptDto } from './dto/submit-attempt.dto';
 import { RolesGuard } from '../../core/guards/roles.guard';
+import { OptionalJwtAuthGuard } from '../../core/guards/optional-jwt.guard';
 
 @Controller('quizzes')
 export class QuizzesController {
@@ -23,29 +25,52 @@ export class QuizzesController {
 
   // ----- Public (website) -----
   @Get('published')
-  listPublished(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.quizzes.findPublished({
-      page: Number(page) || 1,
-      limit: Number(limit) || 50,
-    });
+  @UseGuards(OptionalJwtAuthGuard)
+  listPublished(
+    @Request() req: { user?: { role?: string } },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const role = req.user?.role ?? null;
+    return this.quizzes.findPublished(
+      { page: Number(page) || 1, limit: Number(limit) || 50 },
+      role,
+    );
   }
 
   @Get('by-slug/:slug')
-  getBySlug(@Param('slug') slug: string) {
-    return this.quizzes.findBySlug(slug);
+  @UseGuards(OptionalJwtAuthGuard)
+  getBySlug(
+    @Request() req: { user?: { role?: string } },
+    @Param('slug') slug: string,
+  ) {
+    const role = req.user?.role ?? null;
+    return this.quizzes.findBySlug(slug, role);
   }
 
   @Post(':id/attempt')
-  submitAttempt(@Param('id') id: string, @Body() dto: SubmitAttemptDto) {
+  @UseGuards(OptionalJwtAuthGuard)
+  submitAttempt(
+    @Request() req: { user?: { role?: string } },
+    @Param('id') id: string,
+    @Body() dto: SubmitAttemptDto,
+  ) {
+    const role = req.user?.role ?? null;
     return this.quizzes.submitAttempt(id, dto.answers, {
       guestName: dto.guestName,
       guestEmail: dto.guestEmail,
+      userRole: role,
     });
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string) {
-    return this.quizzes.findOne(id, false);
+  @UseGuards(OptionalJwtAuthGuard)
+  getOne(
+    @Request() req: { user?: { role?: string } },
+    @Param('id') id: string,
+  ) {
+    const role = req.user?.role ?? null;
+    return this.quizzes.findOne(id, false, role);
   }
 
   // ----- CRM -----
@@ -73,26 +98,37 @@ export class QuizzesController {
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  update(@Param('id') id: string, @Body() dto: UpdateQuizDto) {
-    return this.quizzes.update(id, dto);
+  update(
+    @Request() req: { user: { role: string } },
+    @Param('id') id: string,
+    @Body() dto: UpdateQuizDto,
+  ) {
+    return this.quizzes.update(id, dto, req.user.role);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  remove(@Param('id') id: string) {
-    return this.quizzes.remove(id);
+  remove(@Request() req: { user: { role: string } }, @Param('id') id: string) {
+    return this.quizzes.remove(id, req.user.role);
   }
 
   @Get(':id/questions')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  getQuestions(@Param('id') id: string) {
-    return this.quizzes.findOne(id, true);
+  getQuestions(
+    @Request() req: { user: { role: string } },
+    @Param('id') id: string,
+  ) {
+    return this.quizzes.findOne(id, true, req.user.role);
   }
 
   @Post(':id/questions')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  addQuestion(@Param('id') id: string, @Body() dto: CreateQuestionDto) {
-    return this.quizzes.addQuestion(id, dto);
+  addQuestion(
+    @Request() req: { user: { role: string } },
+    @Param('id') id: string,
+    @Body() dto: CreateQuestionDto,
+  ) {
+    return this.quizzes.addQuestion(id, dto, req.user.role);
   }
 
   @Put('questions/:questionId')

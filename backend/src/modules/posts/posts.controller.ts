@@ -19,6 +19,7 @@ import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { RolesGuard } from '../../core/guards/roles.guard';
+import { OptionalJwtAuthGuard } from '../../core/guards/optional-jwt.guard';
 import { PostStatus } from '@prisma/client';
 import * as multer from 'multer';
 import { extname } from 'path';
@@ -34,13 +35,16 @@ function ensureDir() {
 export class PostsController {
   constructor(private posts: PostsService) {}
 
-  // ----- Public (website): chỉ bài đã xuất bản -----
+  // ----- Public (website): bài đã xuất bản theo visibleToRoles -----
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   getList(
+    @Request() req: { user?: { role?: string } },
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.posts.findPublicList(Number(page) || 1, Number(limit) || 10);
+    const role = req.user?.role ?? null;
+    return this.posts.findPublicList(Number(page) || 1, Number(limit) || 10, role);
   }
 
   // ----- CRM: danh sách có lọc status -----
@@ -58,14 +62,34 @@ export class PostsController {
     });
   }
 
+  /** CRM: lấy một bài viết theo id (tránh trùng với by-slug/:slug). */
+  @Get('crm/:id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  getOneCrm(
+    @Request() req: { user: { role: string } },
+    @Param('id') id: string,
+  ) {
+    return this.posts.findOne(id, req.user.role);
+  }
+
   @Get('by-slug/:slug')
-  getBySlug(@Param('slug') slug: string) {
-    return this.posts.findBySlug(slug);
+  @UseGuards(OptionalJwtAuthGuard)
+  getBySlug(
+    @Request() req: { user?: { role?: string } },
+    @Param('slug') slug: string,
+  ) {
+    const role = req.user?.role ?? null;
+    return this.posts.findBySlug(slug, role);
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string) {
-    return this.posts.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  getOne(
+    @Request() req: { user?: { role?: string } },
+    @Param('id') id: string,
+  ) {
+    const role = req.user?.role ?? null;
+    return this.posts.findOne(id, role);
   }
 
   // ----- CRM (Admin/Teacher) -----
@@ -104,13 +128,17 @@ export class PostsController {
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  update(@Param('id') id: string, @Body() dto: UpdatePostDto) {
-    return this.posts.update(id, dto);
+  update(
+    @Request() req: { user: { role: string } },
+    @Param('id') id: string,
+    @Body() dto: UpdatePostDto,
+  ) {
+    return this.posts.update(id, dto, req.user.role);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  remove(@Param('id') id: string) {
-    return this.posts.remove(id);
+  remove(@Request() req: { user: { role: string } }, @Param('id') id: string) {
+    return this.posts.remove(id, req.user.role);
   }
 }

@@ -1,75 +1,38 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { CreateTeacherDto } from './dto/create-teacher.dto';
-import { UpdateTeacherDto } from './dto/update-teacher.dto';
+import { UserRole } from '@prisma/client';
 
+/** Website: danh sách giáo viên lấy từ User (role = TEACHER, teacherPublic = true). Trả về shape giống cũ (name, title, bio, avatarPath, ...). */
 @Injectable()
 export class TeachersService {
   constructor(private prisma: PrismaService) {}
 
-  /** Public: chỉ giáo viên isPublic, cho website */
   async findPublicList() {
-    const items = await this.prisma.teacher.findMany({
-      where: { isPublic: true },
-      orderBy: [{ orderIndex: 'asc' }, { createdAt: 'asc' }],
+    const users = await this.prisma.user.findMany({
+      where: { role: UserRole.TEACHER, teacherPublic: true },
+      orderBy: [{ teacherOrderIndex: 'asc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        title: true,
+        bio: true,
+        specializations: true,
+        yearsExperience: true,
+        teacherOrderIndex: true,
+      },
     });
+    const items = users.map((u) => ({
+      id: u.id,
+      name: [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || '—',
+      title: u.title ?? undefined,
+      bio: u.bio ?? undefined,
+      avatarPath: u.avatar ?? undefined,
+      specializations: u.specializations ?? [],
+      yearsExperience: u.yearsExperience ?? undefined,
+      orderIndex: u.teacherOrderIndex ?? 0,
+    }));
     return { items };
-  }
-
-  /** CRM: tất cả giáo viên */
-  async findAll(params: { page?: number; limit?: number } = {}) {
-    const { page = 1, limit = 50 } = params;
-    const [items, total] = await Promise.all([
-      this.prisma.teacher.findMany({
-        orderBy: [{ orderIndex: 'asc' }, { createdAt: 'desc' }],
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.teacher.count(),
-    ]);
-    return { items, total, page, limit };
-  }
-
-  async findOne(id: string) {
-    const teacher = await this.prisma.teacher.findUnique({ where: { id } });
-    if (!teacher) throw new NotFoundException('Giáo viên không tồn tại');
-    return teacher;
-  }
-
-  async create(dto: CreateTeacherDto) {
-    return this.prisma.teacher.create({
-      data: {
-        name: dto.name,
-        title: dto.title,
-        bio: dto.bio,
-        avatarPath: dto.avatarPath,
-        specializations: dto.specializations ?? [],
-        yearsExperience: dto.yearsExperience,
-        isPublic: dto.isPublic ?? true,
-        orderIndex: dto.orderIndex ?? 0,
-      },
-    });
-  }
-
-  async update(id: string, dto: UpdateTeacherDto) {
-    await this.findOne(id);
-    return this.prisma.teacher.update({
-      where: { id },
-      data: {
-        ...(dto.name != null && { name: dto.name }),
-        ...(dto.title !== undefined && { title: dto.title }),
-        ...(dto.bio !== undefined && { bio: dto.bio }),
-        ...(dto.avatarPath !== undefined && { avatarPath: dto.avatarPath }),
-        ...(dto.specializations !== undefined && { specializations: dto.specializations }),
-        ...(dto.yearsExperience !== undefined && { yearsExperience: dto.yearsExperience }),
-        ...(dto.isPublic !== undefined && { isPublic: dto.isPublic }),
-        ...(dto.orderIndex !== undefined && { orderIndex: dto.orderIndex }),
-      },
-    });
-  }
-
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.teacher.delete({ where: { id } });
   }
 }

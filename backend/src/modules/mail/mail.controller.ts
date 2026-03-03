@@ -1,9 +1,11 @@
 import { Body, Controller, Post, Get, Delete, Param, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { UserRole } from '@prisma/client';
 import { IsString, IsOptional, IsArray, IsEmail } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { MailService, SendMailOptions } from './mail.service';
 import { RolesGuard } from '../../core/guards/roles.guard';
+import { Roles } from '../../core/decorators/roles.decorator';
 
 class SendMailDto {
   @Transform(({ value }) => {
@@ -28,11 +30,12 @@ class SendMailDto {
 }
 
 @Controller('mail')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Roles(UserRole.SUPER_ADMIN, UserRole.TEACHER)
 export class MailController {
   constructor(private mail: MailService) {}
 
   @Post('send')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async send(@Body() dto: SendMailDto) {
     const toList = dto.to?.filter(Boolean) ?? [];
     if (!toList.length) return { success: false, error: 'Thiếu địa chỉ người nhận (to)' };
@@ -46,7 +49,6 @@ export class MailController {
   }
 
   @Get('sent')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   listSent(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -58,19 +60,16 @@ export class MailController {
   }
 
   @Get('sent/:id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   getSent(@Param('id') id: string) {
     return this.mail.getSent(id);
   }
 
   @Delete('sent/:id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   deleteSent(@Param('id') id: string) {
     return this.mail.deleteSent(id);
   }
 
   @Post('check')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   check() {
     return { configured: this.mail.isConfigured() };
   }
