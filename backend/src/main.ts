@@ -3,8 +3,10 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import helmet from 'helmet';
-import compression from 'compression';
 import { AppModule } from './app.module';
+
+// compression là CommonJS (module.exports = function), dùng require để runtime gọi đúng
+const compression = require('compression') as (options?: unknown) => import('express').RequestHandler;
 
 async function bootstrap() {
   // Cảnh báo: local không nên dùng database production (Render) – dễ gây lỗi ảnh, data lẫn lộn.
