@@ -89,6 +89,11 @@ export class EnrollmentRequestsService {
           where: { id },
           data: { status: 'APPROVED', note: body.note ?? null, reviewedAt, reviewedBy: reviewerId },
         }),
+        // Mua/duyệt khóa học → chuyển tài khoản tạm (học thử) thành vĩnh viễn.
+        this.prisma.user.update({
+          where: { id: req.userId },
+          data: { isTrial: false, trialExpiresAt: null },
+        }),
       ]);
     } else {
       await this.prisma.courseEnrollmentRequest.update({
@@ -103,5 +108,53 @@ export class EnrollmentRequestsService {
         course: { select: { id: true, name: true, slug: true } },
       },
     });
+  }
+
+  /** CRM: hoàn duyệt — chỉ áp dụng khi status = APPROVED. Xóa enrollment, chuyển yêu cầu về PENDING. */
+  async revert(id: string, requesterRole: UserRoleOrGuest) {
+    if (requesterRole !== 'SUPER_ADMIN' && requesterRole !== 'TEACHER') {
+      throw new ForbiddenException('Chỉ admin hoặc giảng viên mới thực hiện được.');
+    }
+    const req = await this.prisma.courseEnrollmentRequest.findUnique({
+      where: { id },
+      include: { user: true, course: true },
+    });
+    if (!req) throw new NotFoundException('Không tìm thấy yêu cầu.');
+    if (req.status !== 'APPROVED') {
+      throw new BadRequestException('Chỉ có thể hoàn duyệt yêu cầu đã duyệt (Đã duyệt).');
+    }
+    await this.prisma.$transaction([
+      this.prisma.courseEnrollment.deleteMany({
+        where: { userId: req.userId, courseId: req.courseId },
+      }),
+      this.prisma.courseEnrollmentRequest.update({
+        where: { id },
+        data: { status: 'PENDING', note: null, reviewedAt: null, reviewedBy: null },
+      }),
+    ]);
+    return this.prisma.courseEnrollmentRequest.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, email: true, firstName: true, lastName: true } },
+        course: { select: { id: true, name: true, slug: true } },
+      },
+    });
+  }
+
+  /** CRM: xóa yêu cầu. Cho phép khi REJECTED hoặc PENDING. Nếu APPROVED thì phải hoàn duyệt trước. */
+  async remove(id: string, requesterRole: UserRoleOrGuest) {
+    if (requesterRole !== 'SUPER_ADMIN' && requesterRole !== 'TEACHER') {
+      throw new ForbiddenException('Chỉ admin hoặc giảng viên mới xóa được.');
+    }
+    const req = await this.prisma.courseEnrollmentRequest.findUnique({
+      where: { id },
+      select: { id: true, status: true, userId: true, courseId: true },
+    });
+    if (!req) throw new NotFoundException('Không tìm thấy yêu cầu.');
+    if (req.status === 'APPROVED') {
+      throw new BadRequestException('Yêu cầu đã duyệt. Hãy dùng Hoàn duyệt trước khi xóa.');
+    }
+    await this.prisma.courseEnrollmentRequest.delete({ where: { id } });
+    return { deleted: true, id };
   }
 }

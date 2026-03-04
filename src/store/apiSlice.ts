@@ -24,10 +24,22 @@ export const apiSlice = createApi({
         phone?: string | null;
         role: string;
         status: string;
-        enrollments?: { courseId: string; courseName: string; courseSlug: string; enrolledAt: string; totalLessons: number; completedLessons: number; percentProgress: number }[];
-        quizAttempts?: { id: string; quizId: string; quizTitle: string; quizSlug: string; score: number | null; submittedAt: string | null }[];
+        emailVerified?: boolean;
+        createdAt?: string;
+        updatedAt?: string;
+        avatar?: string | null;
+        title?: string | null;
+        bio?: string | null;
+        specializations?: string[];
+        yearsExperience?: number | null;
         isTrial?: boolean;
         trialExpiresAt?: string | null;
+        enrollments?: { courseId: string; courseName: string; courseSlug: string; enrolledAt: string; totalLessons: number; completedLessons: number; percentProgress: number }[];
+        quizAttempts?: { id: string; quizId: string; quizTitle: string; quizSlug: string; score: number | null; submittedAt: string | null }[];
+        classesCurrent?: { id: string; name: string; status: string }[];
+        classesPast?: { id: string; name: string; status: string; closedAt?: string }[];
+        classesTeachingCurrent?: { id: string; name: string; status: string }[];
+        classesTeachingPast?: { id: string; name: string; status: string; closedAt?: string }[];
       },
       void
     >({

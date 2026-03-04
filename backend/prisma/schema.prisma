@@ -24,6 +24,11 @@ enum UserStatus {
   PENDING_VERIFICATION
 }
 
+enum ClassStatus {
+  OPEN
+  CLOSED
+}
+
 enum PostStatus {
   DRAFT
   PUBLISHED
@@ -80,6 +85,71 @@ model User {
   enrollmentRequests   CourseEnrollmentRequest[]
   isTrial              Boolean   @default(false)
   trialExpiresAt       DateTime?
+  trialRegistrationsCreated TrialRegistration[] @relation("TrialCreatedUser")
+  taughtClasses    Class[]           @relation("TeacherClasses")
+  classMemberships ClassMembership[]
+}
+
+// Lớp học (CRM): một giảng viên dạy, nhiều học viên. Lịch học: thứ + giờ + phòng.
+model Class {
+  id        String      @id @default(cuid())
+  name      String
+  teacherId String
+  status    ClassStatus @default(OPEN)
+  closedAt  DateTime?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Lịch học: 0 = Chủ nhật, 1 = T2, ..., 6 = T7
+  scheduleDayOfWeek Int[]     @default([])
+  scheduleStartTime String?   // HH:mm
+  scheduleEndTime   String?   // HH:mm
+  room              String?
+  maxMembers        Int?      // null = không giới hạn
+
+  teacher           User                   @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  members           ClassMembership[]
+  guestRequests     ClassRegistrationRequest[]
+  trialRegistrations TrialRegistration[]
+
+  @@index([teacherId])
+  @@index([status])
+  @@map("classes")
+}
+
+// Đăng ký lớp từ website (khách chưa có tài khoản): gửi email/name/phone, CRM xử lý sau.
+model ClassRegistrationRequest {
+  id        String    @id @default(cuid())
+  classId   String
+  className String?   // Tên khóa học tại thời điểm đăng ký (hiển thị đầy đủ trên CRM)
+  classDate DateTime? // Ngày buổi học đăng ký (từ lịch tuần)
+  email     String
+  fullName  String
+  phone     String?
+  message   String?   @db.Text
+  status    String    @default("PENDING") // PENDING, CONTACTED, APPROVED, REJECTED
+  createdAt DateTime  @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([status])
+  @@map("class_registration_requests")
+}
+
+model ClassMembership {
+  id       String   @id @default(cuid())
+  classId  String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@index([classId])
+  @@index([userId])
+  @@map("class_memberships")
 }
 
 // Yêu cầu đăng ký khóa học (người dùng đã đăng nhập gửi, admin/giảng viên duyệt)
@@ -108,23 +178,31 @@ model CourseEnrollmentRequest {
   @@map("course_enrollment_requests")
 }
 
-// Đăng ký học thử (khách chưa đăng nhập); khi duyệt tạo tài khoản tạm 24h
+// Đăng ký học thử (khách chưa đăng nhập): khóa học HOẶC lớp học; khi duyệt tạo tài khoản tạm 24h
+// - courseId set: học thử khóa → duyệt = tạo user + CourseEnrollment
+// - classId set: đăng ký lớp từ web → duyệt = tạo user + ClassMembership (buổi classDate)
 model TrialRegistration {
   id             String                 @id @default(cuid())
   email          String
   fullName       String
   phone          String?
-  courseId       String
-  message        String?                @db.Text
+  courseId       String?                 // Học thử khóa (từ trang Book trial)
+  classId        String?                 // Đăng ký lớp (từ form Đăng ký lớp)
+  className      String?                 // Tên lớp tại thời điểm đăng ký
+  classDate      DateTime?               // Ngày buổi học đăng ký
+  message        String?                 @db.Text
   status         EnrollmentRequestStatus @default(PENDING)
-  requestedAt    DateTime              @default(now())
+  requestedAt    DateTime                @default(now())
   reviewedAt     DateTime?
   reviewedBy     String?
-  createdUserId  String?                // User tạo khi duyệt (tài khoản học thử)
+  createdUserId  String?                 // User tạo khi duyệt (tài khoản học thử)
 
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course       Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  class        Class?  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdUser  User?   @relation("TrialCreatedUser", fields: [createdUserId], references: [id], onDelete: SetNull)
 
   @@index([courseId])
+  @@index([classId])
   @@index([status])
   @@map("trial_registrations")
 }

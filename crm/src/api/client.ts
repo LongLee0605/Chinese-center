@@ -52,27 +52,36 @@ function getToken(): string | null {
   return localStorage.getItem('crm_token');
 }
 
+/** Xử lý 401 thống nhất: xóa token/user, redirect login. Gọi từ api() và fetchWithAuth(). */
+function handleUnauthorized(): never {
+  localStorage.removeItem('crm_token');
+  localStorage.removeItem('crm_user');
+  window.location.href = '/login';
+  throw new Error('Unauthorized');
+}
+
+/** Fetch có auth header; nếu 401 thì handleUnauthorized(). Dùng cho JSON api và upload. */
+async function fetchWithAuth(url: string, init: RequestInit): Promise<Response> {
+  const token = getToken();
+  const headers = new Headers(init.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const res = await fetch(url, { ...init, headers });
+  if (res.status === 401) handleUnauthorized();
+  return res;
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = getToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  if (res.status === 401) {
-    localStorage.removeItem('crm_token');
-    localStorage.removeItem('crm_user');
-    window.location.href = '/login';
-    throw new Error('Unauthorized');
-  }
+  const res = await fetchWithAuth(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || 'Request failed');
+    throw new Error((err as { message?: string }).message || 'Request failed');
   }
   return res.json();
 }
@@ -101,20 +110,9 @@ export const postsApi = {
   delete: (id: string) => api<unknown>(`/posts/${id}`, { method: 'DELETE' }),
   /** Upload ảnh cho nội dung bài viết. Trả về path (vd: posts/xxx.jpg) để build URL: getUploadsBase() + '/uploads/' + path */
   uploadImage: async (file: File): Promise<{ path: string }> => {
-    const token = getToken();
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${API_BASE}/posts/upload-image`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: form,
-    });
-    if (res.status === 401) {
-      localStorage.removeItem('crm_token');
-      localStorage.removeItem('crm_user');
-      window.location.href = '/login';
-      throw new Error('Unauthorized');
-    }
+    const res = await fetchWithAuth(`${API_BASE}/posts/upload-image`, { method: 'POST', body: form });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error((err as { message?: string }).message || 'Upload thất bại');
@@ -143,20 +141,9 @@ export const coursesApi = {
   removeEnrollment: (courseId: string, enrollmentId: string) =>
     api<unknown>(`/courses/${courseId}/enrollments/${enrollmentId}`, { method: 'DELETE' }),
   uploadImage: async (file: File): Promise<{ path: string }> => {
-    const token = getToken();
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${API_BASE}/courses/upload-image`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: form,
-    });
-    if (res.status === 401) {
-      localStorage.removeItem('crm_token');
-      localStorage.removeItem('crm_user');
-      window.location.href = '/login';
-      throw new Error('Unauthorized');
-    }
+    const res = await fetchWithAuth(`${API_BASE}/courses/upload-image`, { method: 'POST', body: form });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error((err as { message?: string }).message || 'Upload thất bại');
@@ -178,6 +165,10 @@ export const enrollmentRequestsApi = {
     api<EnrollmentRequest>('/enrollment-requests', { method: 'POST', body: JSON.stringify({ courseId }) }),
   review: (id: string, body: { status: 'APPROVED' | 'REJECTED'; note?: string }) =>
     api<EnrollmentRequest>(`/enrollment-requests/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  revert: (id: string) =>
+    api<EnrollmentRequest>(`/enrollment-requests/${id}/revert`, { method: 'POST' }),
+  remove: (id: string) =>
+    api<{ deleted: boolean; id: string }>(`/enrollment-requests/${id}`, { method: 'DELETE' }),
 };
 
 export type EnrollmentRequest = {
@@ -204,6 +195,13 @@ export const trialRegistrationsApi = {
   },
   review: (id: string, body: { status: 'APPROVED' | 'REJECTED'; note?: string }) =>
     api<TrialRegistration>(`/trial-registrations/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  revert: (id: string) => api<TrialRegistration>(`/trial-registrations/${id}/revert`, { method: 'PATCH' }),
+  deleteTrialAccount: (id: string) =>
+    api<TrialRegistration>(`/trial-registrations/${id}/trial-account`, { method: 'DELETE' }),
+  /** Làm sạch: set createdUserId = null cho đăng ký mà user không tồn tại hoặc không còn trial */
+  cleanup: () => api<{ updated: number }>('/trial-registrations/cleanup', { method: 'POST' }),
+  /** Xóa toàn bộ đăng ký học thử (chỉ SUPER_ADMIN) */
+  deleteAll: () => api<{ deleted: number }>('/trial-registrations/all', { method: 'DELETE' }),
 };
 
 export type TrialRegistration = {
@@ -211,14 +209,19 @@ export type TrialRegistration = {
   email: string;
   fullName: string;
   phone?: string | null;
-  courseId: string;
+  courseId?: string | null;
+  classId?: string | null;
+  className?: string | null;
+  classDate?: string | null;
   message?: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   requestedAt: string;
   reviewedAt?: string | null;
   reviewedBy?: string | null;
   createdUserId?: string | null;
-  course: { id: string; name: string; slug: string };
+  course?: { id: string; name: string; slug: string } | null;
+  class?: { id: string; name: string } | null;
+  createdUser?: { id: string; trialExpiresAt: string | null } | null;
 };
 
 export type NotificationCounts = {
@@ -363,6 +366,8 @@ export const mailApi = {
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'TEACHER' | 'STUDENT';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION';
 
+export type ClassInfo = { id: string; name: string; status: string; closedAt?: string };
+
 export type UserAccount = {
   id: string;
   email: string;
@@ -381,6 +386,18 @@ export type UserAccount = {
   yearsExperience?: number | null;
   teacherPublic?: boolean;
   teacherOrderIndex?: number;
+  /** Tài khoản học thử (tạm thời) */
+  isTrial?: boolean;
+  /** Thời điểm hết hạn (ISO string). Hết hạn thì backend tự xóa khi list. */
+  trialExpiresAt?: string | null;
+  /** Học viên: lớp đang học (OPEN) */
+  currentClasses?: Array<{ id: string; name: string; status: string }>;
+  /** Học viên: lớp từng học (CLOSED) */
+  pastClasses?: Array<{ id: string; name: string; status: string; closedAt?: string }>;
+  /** Giảng viên: lớp đang dạy */
+  classesTeachingCurrent?: Array<{ id: string; name: string; status: string }>;
+  /** Giảng viên: lớp từng dạy */
+  classesTeachingPast?: Array<{ id: string; name: string; status: string; closedAt?: string }>;
 };
 
 export type UserCreateBody = {
@@ -415,12 +432,73 @@ export type UserUpdateBody = Partial<{
   teacherOrderIndex: number;
 }>;
 
+export type ClassItem = {
+  id: string;
+  name: string;
+  status: 'OPEN' | 'CLOSED';
+  closedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  scheduleDayOfWeek?: number[] | null;
+  scheduleStartTime?: string | null;
+  scheduleEndTime?: string | null;
+  teacher: { id: string; firstName: string; lastName: string; email: string };
+  _count?: { members: number };
+  /** Sĩ số (backend trả về rõ ràng). */
+  memberCount?: number;
+};
+
+export const classesApi = {
+  list: (params?: { page?: number; limit?: number; status?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    if (params?.status) q.set('status', params.status);
+    return api<{ items: ClassItem[]; total: number; page: number; limit: number }>(`/classes?${q}`);
+  },
+  get: (id: string) =>
+    api<ClassItem & {
+      members: Array<{ id: string; joinedAt: string; user: { id: string; email: string; firstName: string; lastName: string; phone: string | null } }>;
+      guestRequests?: Array<{
+        id: string;
+        className: string | null;
+        classDate: string | null;
+        email: string;
+        fullName: string;
+        phone: string | null;
+        message: string | null;
+        status: string;
+        createdAt: string;
+      }>;
+    }>(`/classes/${id}`),
+  reviewRegistrationRequest: (classId: string, requestId: string, body: { status: 'APPROVED' | 'REJECTED' }) =>
+    api<unknown>(`/classes/${classId}/registration-requests/${requestId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  revertRegistrationRequest: (classId: string, requestId: string) =>
+    api<unknown>(`/classes/${classId}/registration-requests/${requestId}/revert`, { method: 'POST' }),
+  deleteRegistrationRequest: (classId: string, requestId: string) =>
+    api<unknown>(`/classes/${classId}/registration-requests/${requestId}`, { method: 'DELETE' }),
+  create: (body: { name: string; teacherId?: string }) =>
+    api<ClassItem>('/classes', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: { name?: string; teacherId?: string }) =>
+    api<ClassItem>(`/classes/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  close: (id: string) => api<ClassItem>(`/classes/${id}/close`, { method: 'POST' }),
+  addMember: (classId: string, userId: string) =>
+    api<unknown>(`/classes/${classId}/members`, { method: 'POST', body: JSON.stringify({ userId }) }),
+  removeMember: (classId: string, userId: string) =>
+    api<unknown>(`/classes/${classId}/members/${userId}`, { method: 'DELETE' }),
+  delete: (id: string) => api<{ id: string; name: string }>(`/classes/${id}`, { method: 'DELETE' }),
+};
+
 export const usersApi = {
-  list: (params?: { page?: number; limit?: number; role?: string }) => {
+  list: (params?: { page?: number; limit?: number; role?: string; accountType?: 'all' | 'official' | 'trial' }) => {
     const q = new URLSearchParams();
     if (params?.page) q.set('page', String(params.page));
     if (params?.limit) q.set('limit', String(params.limit));
     if (params?.role) q.set('role', params.role);
+    if (params?.accountType && params.accountType !== 'all') q.set('accountType', params.accountType);
     return api<{ items: UserAccount[]; total: number; page: number; limit: number }>(`/users?${q}`);
   },
   get: (id: string) => api<UserAccount>(`/users/${id}`),
@@ -430,20 +508,9 @@ export const usersApi = {
     api<UserAccount>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (id: string) => api<{ id: string; email: string }>(`/users/${id}`, { method: 'DELETE' }),
   uploadAvatar: async (id: string, file: File): Promise<{ avatarPath: string }> => {
-    const token = getToken();
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${API_BASE}/users/${id}/avatar`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: form,
-    });
-    if (res.status === 401) {
-      localStorage.removeItem('crm_token');
-      localStorage.removeItem('crm_user');
-      window.location.href = '/login';
-      throw new Error('Unauthorized');
-    }
+    const res = await fetchWithAuth(`${API_BASE}/users/${id}/avatar`, { method: 'POST', body: form });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error((err as { message?: string }).message || 'Tải ảnh thất bại');

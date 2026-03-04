@@ -43,6 +43,14 @@ export function getAuthToken(): string | null {
   return localStorage.getItem(AUTH_STORAGE_KEY);
 }
 
+/** Chuẩn hóa message lỗi từ response (Nest trả về message: string | string[]). */
+function getErrorMessage(data: { message?: string | string[] }, fallback: string): string {
+  const m = data?.message;
+  if (typeof m === 'string') return m;
+  if (Array.isArray(m) && m.length) return m[0];
+  return fallback;
+}
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAuthToken();
   const headers: Record<string, string> = {
@@ -50,20 +58,49 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     ...(options.headers as Record<string, string>),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  } catch (networkErr) {
+    const msg =
+      networkErr instanceof TypeError && networkErr.message === 'Failed to fetch'
+        ? 'Không kết nối được máy chủ. Kiểm tra mạng hoặc URL API (VITE_API_URL).'
+        : (networkErr as Error).message;
+    throw new Error(msg);
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || 'Request failed');
+    const message = getErrorMessage(err, res.statusText || 'Request failed');
+    throw new Error(message);
   }
   return res.json();
 }
 
+/** Đồng bộ với backend GET /auth/me (full profile). Login vẫn trả về id, email, firstName, lastName, role. */
 export type AuthUser = {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   role: string;
+  phone?: string | null;
+  status?: string;
+  emailVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  avatar?: string | null;
+  title?: string | null;
+  bio?: string | null;
+  specializations?: string[];
+  yearsExperience?: number | null;
+  isTrial?: boolean;
+  trialExpiresAt?: string | null;
+  enrollments?: { courseId: string; courseName: string; courseSlug: string; enrolledAt: string; totalLessons: number; completedLessons: number; percentProgress: number }[];
+  quizAttempts?: { id: string; quizId: string; quizTitle: string; quizSlug: string; score: number | null; submittedAt: string | null }[];
+  classesCurrent?: { id: string; name: string; status: string }[];
+  classesPast?: { id: string; name: string; status: string; closedAt?: string }[];
+  classesTeachingCurrent?: { id: string; name: string; status: string }[];
+  classesTeachingPast?: { id: string; name: string; status: string; closedAt?: string }[];
 };
 
 export const authApi = {
@@ -147,6 +184,45 @@ export type QuizListItem = {
   timeLimitMinutes?: number | null;
   passingScore?: number | null;
   _count: { questions: number };
+};
+
+/** Lớp học công khai (lịch): cho trang Lịch học, đăng ký lớp. */
+export type ScheduleClassItem = {
+  id: string;
+  name: string;
+  scheduleDayOfWeek: number[];
+  scheduleStartTime: string | null;
+  scheduleEndTime: string | null;
+  room: string | null;
+  maxMembers: number | null;
+  teacher: { id: string; firstName: string; lastName: string };
+  _count?: { members: number };
+  /** Sĩ số (backend trả về rõ ràng). */
+  memberCount?: number;
+};
+
+export const scheduleApi = {
+  getClasses: () =>
+    api<{ items: ScheduleClassItem[] }>('/schedule'),
+  joinClass: (classId: string) =>
+    api<{ success: boolean; message: string }>(`/schedule/${classId}/join`, {
+      method: 'POST',
+    }),
+  registerRequest: (
+    classId: string,
+    body: {
+      email: string;
+      fullName: string;
+      phone?: string;
+      message?: string;
+      className?: string;
+      classDate?: string;
+    },
+  ) =>
+    api<{ success: boolean; message: string }>(`/schedule/${classId}/register-request`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 };
 
 export const quizzesApi = {

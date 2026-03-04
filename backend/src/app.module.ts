@@ -15,6 +15,7 @@ import { EnrollmentRequestsModule } from './modules/enrollment-requests/enrollme
 import { TrialRegistrationsModule } from './modules/trial-registrations/trial-registrations.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SearchModule } from './modules/search/search.module';
+import { ClassesModule } from './modules/classes/classes.module';
 
 @Module({
   controllers: [HealthController],
@@ -32,6 +33,7 @@ import { SearchModule } from './modules/search/search.module';
     UsersModule,
     EnrollmentRequestsModule,
     TrialRegistrationsModule,
+    ClassesModule,
     NotificationsModule,
     SearchModule,
   ],

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { trialRegistrationsApi, coursesApi, type TrialRegistration } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
-import { Check, X, Clock, UserPlus, BookOpen } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Check, X, Clock, UserPlus, BookOpen, RotateCcw, Trash2, Brush, Trash } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Chờ duyệt',
@@ -9,8 +10,22 @@ const STATUS_LABELS: Record<string, string> = {
   REJECTED: 'Đã từ chối',
 };
 
+function formatTrialRemaining(trialExpiresAt: string | null | undefined): string {
+  if (!trialExpiresAt) return '—';
+  const end = new Date(trialExpiresAt).getTime();
+  const now = Date.now();
+  const ms = end - now;
+  if (ms <= 0) return 'Đã hết hạn';
+  const hours = Math.floor(ms / (60 * 60 * 1000));
+  const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+  if (hours >= 24) return `Còn ${Math.floor(hours / 24)} ngày ${hours % 24}h`;
+  if (hours > 0) return `Còn ${hours}h ${minutes}p`;
+  return `Còn ${minutes} phút`;
+}
+
 export default function TrialRegistrationsList() {
   const { show } = useToast();
+  const { user } = useAuth();
   const [items, setItems] = useState<TrialRegistration[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -18,6 +33,10 @@ export default function TrialRegistrationsList() {
   const [courseIdFilter, setCourseIdFilter] = useState<string>('');
   const [courses, setCourses] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [revertingId, setRevertingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -59,6 +78,62 @@ export default function TrialRegistrationsList() {
     }
   };
 
+  const handleRevert = async (id: string) => {
+    if (!confirm('Hoàn duyệt sẽ đưa yêu cầu về chờ duyệt và hủy tài khoản học thử (user vẫn tồn tại nhưng không còn trial). Tiếp tục?')) return;
+    setRevertingId(id);
+    try {
+      await trialRegistrationsApi.revert(id);
+      show('success', 'Đã hoàn duyệt.');
+      load();
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Thao tác thất bại.');
+    } finally {
+      setRevertingId(null);
+    }
+  };
+
+  const handleDeleteTrialAccount = async (id: string) => {
+    if (!confirm('Xóa tài khoản học thử sẽ xóa luôn user khỏi hệ thống (biến mất khỏi danh sách Tài khoản). Tiếp tục?')) return;
+    setDeletingId(id);
+    try {
+      await trialRegistrationsApi.deleteTrialAccount(id);
+      show('success', 'Đã xóa tài khoản học thử.');
+      load();
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Thao tác thất bại.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleCleanup = async () => {
+    if (!confirm('Làm sạch sẽ cập nhật các đăng ký đã duyệt mà tài khoản học thử không còn (đã xóa/thu hồi) thành "Đã bị xóa". Tiếp tục?')) return;
+    setCleanupLoading(true);
+    try {
+      const { updated } = await trialRegistrationsApi.cleanup();
+      show('success', updated > 0 ? `Đã làm sạch ${updated} đăng ký.` : 'Không có dữ liệu cần làm sạch.');
+      load();
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Làm sạch thất bại.');
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!confirm('Xóa toàn bộ đăng ký học thử? Mọi bản ghi trong danh sách sẽ bị xóa vĩnh viễn. Tài khoản User đã tạo (học thử) sẽ không bị xóa. Tiếp tục?')) return;
+    setDeleteAllLoading(true);
+    try {
+      const { deleted } = await trialRegistrationsApi.deleteAll();
+      show('success', `Đã xóa ${deleted} đăng ký học thử.`);
+      load();
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Xóa toàn bộ thất bại.');
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
@@ -71,7 +146,7 @@ export default function TrialRegistrationsList() {
         )}
       </h1>
       <p className="text-sm text-gray-500 mb-6">
-        Khách từ website gửi form học thử theo khóa. Duyệt sẽ tạo tài khoản tạm (24h) và đăng ký vào khóa tương ứng.
+        Khách từ website gửi form học thử khóa hoặc đăng ký lớp (Lịch học). Duyệt sẽ tạo tài khoản tạm (24h) và thêm vào khóa/lớp tương ứng.
       </p>
 
       <div className="flex flex-wrap gap-3 mb-6">
@@ -95,6 +170,26 @@ export default function TrialRegistrationsList() {
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
+        <button
+          type="button"
+          disabled={cleanupLoading}
+          onClick={handleCleanup}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          title="Cập nhật các đăng ký mà tài khoản học thử đã bị xóa/thu hồi"
+        >
+          <Brush size={16} /> Làm sạch dữ liệu
+        </button>
+        {user?.role === 'SUPER_ADMIN' && (
+          <button
+            type="button"
+            disabled={deleteAllLoading}
+            onClick={handleDeleteAll}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+            title="Xóa toàn bộ đăng ký học thử (chỉ Super Admin)"
+          >
+            <Trash size={16} /> Xóa toàn bộ
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -130,8 +225,21 @@ export default function TrialRegistrationsList() {
                   {reg.phone && <p className="text-sm text-gray-500">{reg.phone}</p>}
                   <div className="mt-2 flex items-center gap-1.5 text-sm text-emerald-700">
                     <BookOpen size={16} className="shrink-0" />
-                    {reg.course.name}
+                    {reg.classId || reg.class
+                      ? `Lớp: ${reg.className || reg.class?.name || '—'}${reg.classDate ? ` (${new Date(reg.classDate).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })})` : ''}`
+                      : reg.course
+                        ? reg.course.name
+                        : '—'}
                   </div>
+                  {reg.status === 'APPROVED' && (reg.createdUser ?? reg.createdUserId) && (
+                    <p className="mt-2 text-sm text-gray-600 flex items-center gap-1.5">
+                      <Clock size={14} className="shrink-0 text-amber-600" />
+                      Thời gian còn lại: <strong>{formatTrialRemaining(reg.createdUser?.trialExpiresAt ?? null)}</strong>
+                    </p>
+                  )}
+                  {reg.status === 'APPROVED' && !reg.createdUserId && (
+                    <p className="mt-2 text-sm text-gray-500 italic">Tài khoản học thử đã bị xóa</p>
+                  )}
                   {reg.message && (
                     <p className="mt-2 text-sm text-gray-600 border-l-2 border-gray-200 pl-3">{reg.message}</p>
                   )}
@@ -157,6 +265,28 @@ export default function TrialRegistrationsList() {
                       className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
                     >
                       <X size={16} /> Từ chối
+                    </button>
+                  </div>
+                )}
+                {reg.status === 'APPROVED' && reg.createdUserId && (
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      disabled={revertingId === reg.id}
+                      onClick={() => handleRevert(reg.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+                      title="Đưa về chờ duyệt, hủy trial"
+                    >
+                      <RotateCcw size={16} /> Hoàn duyệt
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingId === reg.id}
+                      onClick={() => handleDeleteTrialAccount(reg.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      title="Xóa user học thử"
+                    >
+                      <Trash2 size={16} /> Xóa TK học thử
                     </button>
                   </div>
                 )}

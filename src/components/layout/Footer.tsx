@@ -24,7 +24,7 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="bg-primary-950 text-primary-300">
+    <footer className="bg-primary-950 text-primary-300 pb-safe">
       <div className="container-wide section-padding">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
           <div className="sm:col-span-2 lg:col-span-1">

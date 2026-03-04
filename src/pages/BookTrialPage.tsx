@@ -1,35 +1,79 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Send } from 'lucide-react';
+import { Send, BookOpen, Clock } from 'lucide-react';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import SectionTitle from '@/components/ui/SectionTitle';
 import Button from '@/components/ui/Button';
-import { useSubmitLeadMutation, useSubmitTrialRegistrationMutation } from '@/store/apiSlice';
+import { useSubmitLeadMutation, useSubmitTrialRegistrationMutation, useGetCoursesQuery } from '@/store/apiSlice';
+import { scheduleApi, type ScheduleClassItem } from '@/lib/api';
 
-const COURSE_OPTIONS = [
-  { value: 'hsk1', label: 'HSK 1 - Nhập môn' },
-  { value: 'hsk2', label: 'HSK 2 - Sơ cấp' },
-  { value: 'hsk3', label: 'HSK 3 - Trung cấp' },
-  { value: 'kids', label: 'Tiếng Trung thiếu nhi' },
-  { value: 'other', label: 'Khác (để tư vấn viên gọi)' },
+const DAY_LABELS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+
+/** Khung giờ mặc định khi không có lớp nào mở */
+const FALLBACK_TIME_OPTIONS = [
+  { value: 'Sáng (8h–12h)', label: 'Sáng (8h–12h)' },
+  { value: 'Chiều (13h–17h)', label: 'Chiều (13h–17h)' },
+  { value: 'Tối (18h–21h)', label: 'Tối (18h–21h)' },
+  { value: 'Cuối tuần', label: 'Cuối tuần' },
 ];
 
-const TIME_OPTIONS = [
-  'Sáng (8h–12h)',
-  'Chiều (13h–17h)',
-  'Tối (18h–21h)',
-  'Cuối tuần',
-];
+function formatTime(s: string | null): string {
+  if (!s) return '—';
+  const [h, m] = s.split(':');
+  return `${h}:${m || '00'}`;
+}
+
+/** Từ danh sách lớp mở, tạo options khung giờ: mỗi (lớp, thứ) + giờ → 1 option */
+function buildTimeSlotsFromClasses(classes: ScheduleClassItem[]): { value: string; label: string }[] {
+  const seen = new Set<string>();
+  const options: { value: string; label: string }[] = [];
+  for (const c of classes) {
+    const days = c.scheduleDayOfWeek ?? [];
+    const start = formatTime(c.scheduleStartTime);
+    const end = formatTime(c.scheduleEndTime);
+    const timeStr = `${start}–${end}`;
+    for (const d of days) {
+      const dayName = DAY_LABELS[d] ?? `Thứ ${d + 1}`;
+      const value = `${dayName} ${timeStr} - ${c.name}`;
+      if (seen.has(value)) continue;
+      seen.add(value);
+      options.push({ value, label: value });
+    }
+  }
+  return options.sort((a, b) => a.label.localeCompare(b.label));
+}
 
 export default function BookTrialPage() {
   const [searchParams] = useSearchParams();
   const courseSlug = searchParams.get('courseSlug')?.trim() || undefined;
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [scheduleClasses, setScheduleClasses] = useState<ScheduleClassItem[]>([]);
+
   const [submitLead, { isLoading: submittingLead }] = useSubmitLeadMutation();
   const [submitTrialRegistration, { isLoading: submittingTrial }] = useSubmitTrialRegistrationMutation();
+  const { data: coursesData } = useGetCoursesQuery(undefined, { skip: !!courseSlug });
   const submitting = submittingLead || submittingTrial;
+
+  const courses = useMemo(() => {
+    const items = coursesData?.items ?? [];
+    const list = items.map((c) => ({ value: c.slug, label: c.name, id: c.id }));
+    if (list.length === 0) return [{ value: 'other', label: 'Khác (để tư vấn viên gọi)', id: 'other' }];
+    return list;
+  }, [coursesData]);
+
+  const timeSlotOptions = useMemo(() => {
+    const fromClasses = buildTimeSlotsFromClasses(scheduleClasses);
+    return fromClasses.length > 0 ? fromClasses : FALLBACK_TIME_OPTIONS;
+  }, [scheduleClasses]);
+
+  useEffect(() => {
+    scheduleApi
+      .getClasses()
+      .then((r) => setScheduleClasses(r.items ?? []))
+      .catch(() => setScheduleClasses([]));
+  }, []);
 
   const handleSubmitTrial = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -64,9 +108,11 @@ export default function BookTrialPage() {
     const name = (form.querySelector('[name="name"]') as HTMLInputElement)?.value?.trim();
     const phone = (form.querySelector('[name="phone"]') as HTMLInputElement)?.value?.trim();
     const email = (form.querySelector('[name="email"]') as HTMLInputElement)?.value?.trim();
-    const course = (form.querySelector('[name="course"]:checked') as HTMLInputElement)?.value;
+    const courseValue = (form.querySelector('[name="course"]:checked') as HTMLInputElement)?.value;
     const timeCheckboxes = form.querySelectorAll('[name="time"]:checked');
-    const timePreference = Array.from(timeCheckboxes).map((el) => (el as HTMLInputElement).value).join(', ');
+    const timePreference = Array.from(timeCheckboxes)
+      .map((el) => (el as HTMLInputElement).value)
+      .join('; ');
     const note = (form.querySelector('[name="note"]') as HTMLTextAreaElement)?.value?.trim();
     if (!name || !phone || !email) return;
     try {
@@ -75,7 +121,7 @@ export default function BookTrialPage() {
         name,
         email,
         phone,
-        courseInterest: course || undefined,
+        courseInterest: courseValue || undefined,
         timePreference: timePreference || undefined,
         note: note || undefined,
       }).unwrap();
@@ -166,28 +212,46 @@ export default function BookTrialPage() {
                   <label htmlFor="email" className="block text-sm font-medium text-primary-900 mb-1.5">Email *</label>
                   <input id="email" name="email" type="email" required className="w-full rounded-lg border border-primary-300 px-4 py-3 text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500 min-h-[44px]" placeholder="email@example.com" />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-primary-900 mb-2">Khóa học quan tâm *</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {COURSE_OPTIONS.map((opt) => (
-                      <label key={opt.value} className="flex items-center gap-2 rounded-lg border border-primary-200 px-4 py-3 cursor-pointer hover:bg-primary-50 min-h-[44px]">
-                        <input type="radio" name="course" value={opt.value} required className="w-4 h-4 text-accent-600 focus:ring-accent-500" />
-                        <span className="text-sm font-medium">{opt.label}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <label className="block text-sm font-medium text-primary-900 mb-2">
+                    <BookOpen className="inline h-4 w-4 mr-1.5 text-accent-500" />
+                    Khóa học quan tâm *
+                  </label>
+                  {coursesData === undefined ? (
+                    <p className="text-sm text-primary-500 py-2">Đang tải danh sách khóa học...</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {courses.map((opt) => (
+                        <label key={opt.id} className="flex items-center gap-2 rounded-xl border border-primary-200 px-4 py-3 cursor-pointer hover:bg-primary-50 min-h-[44px] transition-colors has-[:checked]:border-accent-500 has-[:checked]:bg-accent-50">
+                          <input type="radio" name="course" value={opt.value} required className="w-4 h-4 text-accent-600 focus:ring-accent-500" />
+                          <span className="text-sm font-medium text-primary-800">{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-primary-900 mb-2">Khung giờ mong muốn</label>
-                  <div className="flex flex-wrap gap-2">
-                    {TIME_OPTIONS.map((t) => (
-                      <label key={t} className="inline-flex items-center gap-2 rounded-lg border border-primary-200 px-4 py-2.5 cursor-pointer hover:bg-primary-50">
-                        <input type="checkbox" name="time" value={t} className="w-4 h-4 text-accent-600 focus:ring-accent-500 rounded" />
-                        <span className="text-sm">{t}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <label className="block text-sm font-medium text-primary-900 mb-2">
+                    <Clock className="inline h-4 w-4 mr-1.5 text-accent-500" />
+                    Khung giờ mong muốn
+                  </label>
+                  {timeSlotOptions.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {timeSlotOptions.map((t) => (
+                        <label key={t.value} className="inline-flex items-center gap-2 rounded-xl border border-primary-200 px-4 py-2.5 cursor-pointer hover:bg-primary-50 transition-colors has-[:checked]:border-accent-500 has-[:checked]:bg-accent-50">
+                          <input type="checkbox" name="time" value={t.value} className="w-4 h-4 text-accent-600 focus:ring-accent-500 rounded" />
+                          <span className="text-sm text-primary-700">{t.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {scheduleClasses.length === 0 && timeSlotOptions.length > 0 && (
+                    <p className="text-xs text-primary-500 mt-1.5">Khung giờ gợi ý. Trung tâm sẽ xếp lịch phù hợp.</p>
+                  )}
                 </div>
+
                 <div>
                   <label htmlFor="note" className="block text-sm font-medium text-primary-900 mb-1.5">Ghi chú</label>
                   <textarea id="note" name="note" rows={3} className="w-full rounded-lg border border-primary-300 px-4 py-3 text-base focus:border-accent-500 focus:ring-1 focus:ring-accent-500" placeholder="Trình độ hiện tại, mục tiêu học..." />

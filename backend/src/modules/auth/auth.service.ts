@@ -3,12 +3,14 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { UserRole } from '@prisma/client';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
+    private users: UsersService,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -30,8 +32,9 @@ export class AuthService {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return null;
     if (user.isTrial && user.trialExpiresAt && new Date() > user.trialExpiresAt) {
+      await this.users.cleanupExpiredTrialUsers();
       throw new UnauthorizedException(
-        'Tài khoản học thử đã hết hạn. Vui lòng liên hệ để mua khóa học hoặc gia hạn.',
+        'Tài khoản học thử đã hết hạn (24h). Vui lòng đăng ký mua khóa học để có tài khoản vĩnh viễn.',
       );
     }
     const { password: _, ...rest } = user;

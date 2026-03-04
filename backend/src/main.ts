@@ -19,7 +19,12 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' }, // Cho phép frontend (origin khác) tải ảnh /uploads
+    }),
+  );
   app.use(compression());
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   // Local: localhost. Production: CORS_ORIGINS (comma-separated). Cloudflare Pages: *.pages.dev cho cả production và preview URL.
@@ -44,9 +49,23 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-  const port = process.env.PORT || 4000;
-  await app.listen(port);
-  console.log(`API running at http://localhost:${port}/api/v1`);
+  const port = Number(process.env.PORT) || 4000;
+  try {
+    await app.listen(port);
+    console.log(`API running at http://localhost:${port}/api/v1`);
+  } catch (err: unknown) {
+    const e = err as NodeJS.ErrnoException;
+    if (e?.code === 'EADDRINUSE') {
+      console.error(
+        `\n❌ Port ${port} đang được sử dụng. Hãy tắt process đang chạy cổng ${port}, hoặc đổi cổng trong .env (ví dụ PORT=4001).\n`,
+      );
+      process.exit(1);
+    }
+    throw err;
+  }
 }
 
-bootstrap().catch(console.error);
+bootstrap().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

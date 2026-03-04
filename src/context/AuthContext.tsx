@@ -11,6 +11,8 @@ type AuthState = {
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  /** Cập nhật lại full profile từ server (sau đăng ký khóa, cập nhật tài khoản, v.v.). */
+  refetchMe: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -50,12 +52,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, [logout]);
 
+  const refetchMe = useCallback(async () => {
+    const token = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!token) return;
+    const me = await authApi.me();
+    setUser(me);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(me));
+  }, []);
+
   const login = useCallback(
     async (email: string, password: string) => {
       const { access_token, user: nextUser } = await authApi.login(email, password);
       localStorage.setItem(AUTH_STORAGE_KEY, access_token);
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(nextUser));
       setUser(nextUser);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(nextUser));
+      const me = await authApi.me();
+      setUser(me);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(me));
     },
     [],
   );
@@ -67,8 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       login,
       logout,
+      refetchMe,
     }),
-    [user, loading, login, logout],
+    [user, loading, login, logout, refetchMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

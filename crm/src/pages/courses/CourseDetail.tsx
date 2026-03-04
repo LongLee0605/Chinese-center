@@ -117,21 +117,19 @@ export default function CourseDetail() {
   useEffect(() => {
     if (!id) return;
     setLoadingEnrollments(true);
-    coursesApi
-      .getEnrollments(id)
-      .then((list) => setEnrollments(list as typeof enrollments))
-      .catch(() => setEnrollments([]))
-      .finally(() => setLoadingEnrollments(false));
-  }, [id, course]);
-
-  useEffect(() => {
-    if (!id) return;
     setLoadingEnrollmentRequests(true);
-    enrollmentRequestsApi
-      .list({ courseId: id, limit: 100 })
-      .then((r) => setEnrollmentRequests(r.items))
-      .catch(() => setEnrollmentRequests([]))
-      .finally(() => setLoadingEnrollmentRequests(false));
+    Promise.all([
+      coursesApi.getEnrollments(id).catch(() => []),
+      enrollmentRequestsApi.list({ courseId: id, limit: 100 }).catch(() => ({ items: [] })),
+    ])
+      .then(([list, r]) => {
+        setEnrollments((list || []) as typeof enrollments);
+        setEnrollmentRequests(r.items ?? []);
+      })
+      .finally(() => {
+        setLoadingEnrollments(false);
+        setLoadingEnrollmentRequests(false);
+      });
   }, [id]);
 
   useEffect(() => {
@@ -467,52 +465,100 @@ export default function CourseDetail() {
                     </span>
                   </div>
                   <span className="text-xs text-gray-400">{new Date(req.requestedAt).toLocaleString('vi-VN')}</span>
-                  {req.status === 'PENDING' && (
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
+                    {req.status === 'PENDING' && (
+                      <>
+                        <button
+                          type="button"
+                          disabled={reviewingRequestId === req.id}
+                          onClick={async () => {
+                            setReviewingRequestId(req.id);
+                            try {
+                              await enrollmentRequestsApi.review(req.id, { status: 'APPROVED' });
+                              show('success', 'Đã duyệt đăng ký.');
+                              const r = await enrollmentRequestsApi.list({ courseId: id!, limit: 100 });
+                              setEnrollmentRequests(r.items);
+                              loadCourse();
+                            } catch (err) {
+                              show('error', err instanceof Error ? err.message : 'Duyệt thất bại.');
+                            } finally {
+                              setReviewingRequestId(null);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                        >
+                          <Check size={14} /> Duyệt
+                        </button>
+                        <button
+                          type="button"
+                          disabled={reviewingRequestId === req.id}
+                          onClick={async () => {
+                            if (!confirm('Từ chối yêu cầu này?')) return;
+                            setReviewingRequestId(req.id);
+                            try {
+                              await enrollmentRequestsApi.review(req.id, { status: 'REJECTED' });
+                              show('success', 'Đã từ chối.');
+                              const r = await enrollmentRequestsApi.list({ courseId: id!, limit: 100 });
+                              setEnrollmentRequests(r.items);
+                            } catch (err) {
+                              show('error', err instanceof Error ? err.message : 'Thao tác thất bại.');
+                            } finally {
+                              setReviewingRequestId(null);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          <X size={14} /> Từ chối
+                        </button>
+                      </>
+                    )}
+                    {req.status === 'APPROVED' && (
                       <button
                         type="button"
                         disabled={reviewingRequestId === req.id}
                         onClick={async () => {
+                          if (!confirm('Hoàn duyệt: học viên sẽ bị bỏ khỏi khóa học, yêu cầu chuyển về Chờ duyệt. Tiếp tục?')) return;
                           setReviewingRequestId(req.id);
                           try {
-                            await enrollmentRequestsApi.review(req.id, { status: 'APPROVED' });
-                            show('success', 'Đã duyệt đăng ký.');
+                            await enrollmentRequestsApi.revert(req.id);
+                            show('success', 'Đã hoàn duyệt.');
                             const r = await enrollmentRequestsApi.list({ courseId: id!, limit: 100 });
                             setEnrollmentRequests(r.items);
                             loadCourse();
                           } catch (err) {
-                            show('error', err instanceof Error ? err.message : 'Duyệt thất bại.');
+                            show('error', err instanceof Error ? err.message : 'Hoàn duyệt thất bại.');
                           } finally {
                             setReviewingRequestId(null);
                           }
                         }}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm border border-amber-300 text-amber-800 hover:bg-amber-50 disabled:opacity-50"
                       >
-                        <Check size={14} /> Duyệt
+                        Hoàn duyệt
                       </button>
+                    )}
+                    {req.status === 'REJECTED' && (
                       <button
                         type="button"
                         disabled={reviewingRequestId === req.id}
                         onClick={async () => {
-                          if (!confirm('Từ chối yêu cầu này?')) return;
+                          if (!confirm('Xóa yêu cầu đã từ chối này?')) return;
                           setReviewingRequestId(req.id);
                           try {
-                            await enrollmentRequestsApi.review(req.id, { status: 'REJECTED' });
-                            show('success', 'Đã từ chối.');
-                            const r = await enrollmentRequestsApi.list({ courseId: id!, limit: 100 });
-                            setEnrollmentRequests(r.items);
+                            await enrollmentRequestsApi.remove(req.id);
+                            show('success', 'Đã xóa yêu cầu.');
+                            setEnrollmentRequests((prev) => prev.filter((r) => r.id !== req.id));
                           } catch (err) {
-                            show('error', err instanceof Error ? err.message : 'Thao tác thất bại.');
+                            show('error', err instanceof Error ? err.message : 'Xóa thất bại.');
                           } finally {
                             setReviewingRequestId(null);
                           }
                         }}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                       >
-                        <X size={14} /> Từ chối
+                        <Trash2 size={14} /> Xóa
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

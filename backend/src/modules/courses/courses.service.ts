@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
-import { canAccessWithGuest, type UserRoleOrGuest } from '../../core/visibility/visibility.util';
+import { canAccessWithGuest, isStaffRole, type UserRoleOrGuest } from '../../core/visibility/visibility.util';
 import { normalizeImagePath } from '../../core/utils/image-path.util';
 
 /** Chuyển course từ Prisma sang plain object có thể serialize JSON (price: Decimal → number). */
@@ -136,6 +136,8 @@ export class CoursesService {
       });
       if (req) enrollmentRequestStatus = req.status;
     }
+    // Giảng viên / Super Admin: xem và học tất cả khóa, không cần đăng ký.
+    if (isStaffRole(userRole)) enrolled = true;
 
     const serialized = serializeCourse(course as Record<string, unknown>) as Record<string, unknown>;
     serialized.enrolled = enrolled;

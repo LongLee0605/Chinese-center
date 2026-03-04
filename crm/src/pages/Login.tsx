@@ -26,21 +26,21 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-crm-side p-4">
+    <div className="min-h-screen flex items-center justify-center bg-crm-side p-4 pt-safe pb-safe">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-crm-accent text-white mb-4">
             <LayoutGrid size={28} />
           </div>
-          <h1 className="text-2xl font-bold text-white">Chinese Center CRM</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Chinese Center CRM</h1>
           <p className="mt-2 text-slate-400 text-sm">Đăng nhập để quản lý nội dung</p>
         </div>
         <form
           onSubmit={handleSubmit}
-          className="crm-card p-6 sm:p-8 shadow-cardHover"
+          className="crm-card crm-card-padding shadow-cardHover"
         >
           {error && (
-            <div className="mb-4 p-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg">
+            <div className="mb-4 p-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg" role="alert">
               {error}
             </div>
           )}

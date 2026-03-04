@@ -39,11 +39,22 @@
   }
 }
 
+/* Safe area cho mobile (notch, home indicator) */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0);
+}
+/* Touch target tối thiểu cho nút/links trên mobile */
+@media (max-width: 1023px) {
+  a[role="button"],
+  button:not(.no-touch-min),
+  [type="submit"],
+  [type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 @layer utilities {

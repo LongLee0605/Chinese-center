@@ -2,31 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design tokens: spacing đồng bộ 4/8px base, responsive */
 :root {
-  --crm-page-y: 1.5rem;
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;  /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem;    /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem;  /* 24px */
+  --space-8: 2rem;    /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem;   /* 48px */
+
+  --crm-page-y: 1.25rem;
   --crm-page-x: 1rem;
-  --crm-page-y-sm: 2rem;
-  --crm-page-x-sm: 1.5rem;
+  --crm-page-y-sm: 1.5rem;
+  --crm-page-x-sm: 1.25rem;
   --crm-page-y-lg: 2rem;
   --crm-page-x-lg: 2rem;
   --crm-section-gap: 1.5rem;
   --crm-section-gap-lg: 2rem;
-  --crm-card-padding: 1.25rem;
+  --crm-card-padding: 1rem;
+  --crm-card-padding-sm: 1.25rem;
   --crm-card-padding-lg: 1.5rem;
-  --crm-form-gap: 1.25rem;
-  --crm-form-gap-lg: 1.5rem;
+  --crm-form-gap: 1rem;
+  --crm-form-gap-lg: 1.25rem;
+  --crm-touch-min: 44px; /* Touch target tối thiểu */
+}
+
+@media (min-width: 640px) {
+  :root {
+    --crm-card-padding: var(--crm-card-padding-sm);
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --crm-card-padding: var(--crm-card-padding-lg);
+  }
 }
 
 @layer base {
   html {
     @apply antialiased;
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-slate-50 text-slate-900;
     margin: 0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
+  /* Safe area cho mobile (notch, home indicator) */
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0); }
+  .pt-safe { padding-top: env(safe-area-inset-top, 0); }
 }
 
 @layer components {
@@ -35,6 +63,7 @@
     max-width: 72rem;
     margin-left: auto;
     margin-right: auto;
+    width: 100%;
   }
   @media (min-width: 640px) {
     .crm-page {
@@ -46,17 +75,50 @@
       padding: var(--crm-page-y-lg) var(--crm-page-x-lg);
     }
   }
+
   .crm-card {
-    @apply bg-white rounded-xl border border-slate-200/80 shadow-card;
+    @apply bg-white rounded-xl border border-slate-200/80 shadow-sm;
   }
   .crm-card-padding {
     padding: var(--crm-card-padding);
   }
   @media (min-width: 640px) {
     .crm-card-padding {
+      padding: var(--crm-card-padding-sm);
+    }
+  }
+  @media (min-width: 1024px) {
+    .crm-card-padding {
       padding: var(--crm-card-padding-lg);
     }
   }
+
+  /* Bảng: scroll ngang trên mobile, padding đồng bộ */
+  .crm-table-wrap {
+    @apply overflow-x-auto -mx-[var(--crm-page-x)] sm:mx-0;
+    max-width: calc(100% + 2 * var(--crm-page-x));
+  }
+  @media (min-width: 640px) {
+    .crm-table-wrap { max-width: none; }
+  }
+  .crm-table {
+    @apply w-full min-w-[640px];
+  }
+  .crm-table th {
+    @apply text-left text-sm font-semibold text-slate-700 whitespace-nowrap;
+    padding: var(--space-4);
+  }
+  .crm-table td {
+    @apply text-slate-600;
+    padding: var(--space-4);
+  }
+  .crm-table tbody tr {
+    @apply border-t border-slate-100 hover:bg-slate-50/80 transition-colors;
+  }
+  .crm-table thead tr {
+    @apply bg-slate-50 border-b border-slate-200;
+  }
+
   .crm-form-grid {
     display: flex;
     flex-direction: column;
@@ -67,20 +129,56 @@
       gap: var(--crm-form-gap-lg);
     }
   }
+
   .crm-btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-white bg-crm-accent hover:bg-crm-accentHover transition-colors disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium text-white bg-crm-accent hover:bg-crm-accentHover transition-colors disabled:opacity-50 disabled:pointer-events-none;
+    min-height: var(--crm-touch-min);
+    padding: var(--space-2) var(--space-4);
   }
   .crm-btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors;
+    min-height: var(--crm-touch-min);
+    padding: var(--space-2) var(--space-4);
   }
   .crm-btn-ghost {
-    @apply inline-flex items-center justify-center rounded-lg p-2 text-slate-600 hover:bg-slate-100 transition-colors;
+    @apply inline-flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 transition-colors;
+    min-width: var(--crm-touch-min);
+    min-height: var(--crm-touch-min);
+    padding: var(--space-2);
   }
   .crm-input {
     @apply w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-crm-accent/40 focus:border-crm-accent;
   }
   .crm-select {
     @apply rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-crm-accent/40 focus:border-crm-accent;
+  }
+
+  /* Page header đồng bộ */
+  .crm-page-header {
+    @apply flex flex-wrap justify-between items-start gap-3;
+    margin-bottom: var(--crm-section-gap);
+  }
+  @media (min-width: 640px) {
+    .crm-page-header { margin-bottom: var(--crm-section-gap-lg); }
+  }
+  .crm-page-title {
+    @apply text-xl font-bold text-slate-900 tracking-tight;
+  }
+  @media (min-width: 640px) {
+    .crm-page-title { @apply text-2xl; }
+  }
+  .crm-page-subtitle {
+    @apply text-slate-500 text-sm mt-0.5;
+  }
+  .crm-filter-bar {
+    @apply flex flex-wrap gap-2 items-center;
+    margin-bottom: var(--space-4);
+  }
+  .crm-empty-state {
+    @apply text-center py-12 px-4;
+  }
+  .crm-pagination {
+    @apply p-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2;
   }
 }
 

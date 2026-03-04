@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { BookOpen, Clock, ListOrdered, ArrowRight, Lock, Unlock, Send } from 'lucide-react';
 import Breadcrumb from '@/components/layout/Breadcrumb';
-import { useGetCourseBySlugQuery, useGetMeQuery, useSubmitEnrollmentRequestMutation } from '@/store/apiSlice';
+import { useAuth } from '@/context/AuthContext';
+import { useGetCourseBySlugQuery, useSubmitEnrollmentRequestMutation } from '@/store/apiSlice';
 import { formatCurrency } from '@/lib/utils';
 import { bodyHtmlForDisplay } from '@/lib/api';
 import { bodyLooksLikeHtml, plainTextToHtml } from '@/lib/utils';
@@ -18,8 +19,8 @@ function levelLabel(level: string): string {
 
 export default function CourseDetailPage() {
   const { courseSlug } = useParams<{ courseSlug: string }>();
+  const { user: me } = useAuth();
   const { data: course, isLoading, isError, error } = useGetCourseBySlugQuery(courseSlug!, { skip: !courseSlug });
-  const { data: me } = useGetMeQuery(undefined, { skip: !courseSlug });
   const [submitEnrollmentRequest, { isLoading: submittingRequest }] = useSubmitEnrollmentRequestMutation();
   const [requestSent, setRequestSent] = useState(false);
   const forbidden = isError && error && typeof error === 'object' && 'status' in error && (error as { status: number }).status === 403;

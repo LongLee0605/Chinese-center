@@ -41,7 +41,7 @@ export class UsersController {
     return this.users.findOneWithDetail(req.user.sub, req.user.sub, req.user.role as UserRole);
   }
 
-  /** Super Admin: tất cả. Giảng viên: bản thân + học viên. */
+  /** Super Admin: tất cả. Giảng viên: bản thân + học viên. accountType: all | official | trial */
   @Get()
   @Roles(UserRole.SUPER_ADMIN, UserRole.TEACHER)
   list(
@@ -49,9 +49,15 @@ export class UsersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('role') role?: UserRole,
+    @Query('accountType') accountType?: 'all' | 'official' | 'trial',
   ) {
     return this.users.findAll(
-      { page: Number(page) || 1, limit: Number(limit) || 50, role },
+      {
+        page: Number(page) || 1,
+        limit: Number(limit) || 50,
+        role,
+        accountType: accountType ?? 'all',
+      },
       req.user.sub,
       req.user.role as UserRole,
     );

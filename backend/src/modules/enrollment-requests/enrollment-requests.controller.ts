@@ -1,15 +1,18 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Request, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { EnrollmentRequestsService } from './enrollment-requests.service';
 import { RolesGuard } from '../../core/guards/roles.guard';
+import { Roles } from '../../core/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+import { EnrollmentRequestsService } from './enrollment-requests.service';
 
 @Controller('enrollment-requests')
 export class EnrollmentRequestsController {
   constructor(private service: EnrollmentRequestsService) {}
 
-  /** Website (đã đăng nhập): gửi yêu cầu đăng ký khóa */
+  /** Website (chỉ học viên): gửi yêu cầu đăng ký khóa học. Giảng viên không đăng ký khóa, chỉ xem/học. */
   @Post()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.STUDENT)
   create(@Request() req: { user: { sub: string } }, @Body() body: { courseId: string }) {
     if (!body?.courseId) throw new BadRequestException('Thiếu courseId');
     return this.service.create(body.courseId, req.user.sub);
@@ -48,5 +51,19 @@ export class EnrollmentRequestsController {
       throw new BadRequestException('status phải là APPROVED hoặc REJECTED');
     }
     return this.service.review(id, { status: body.status, note: body.note }, req.user.sub, req.user.role as 'SUPER_ADMIN' | 'TEACHER');
+  }
+
+  /** CRM: hoàn duyệt — yêu cầu đã APPROVED chuyển về PENDING và xóa enrollment. */
+  @Post(':id/revert')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  revert(@Request() req: { user: { role: string } }, @Param('id') id: string) {
+    return this.service.revert(id, req.user.role as 'SUPER_ADMIN' | 'TEACHER');
+  }
+
+  /** CRM: xóa yêu cầu (chỉ khi PENDING hoặc REJECTED). */
+  @Delete(':id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  remove(@Request() req: { user: { role: string } }, @Param('id') id: string) {
+    return this.service.remove(id, req.user.role as 'SUPER_ADMIN' | 'TEACHER');
   }
 }

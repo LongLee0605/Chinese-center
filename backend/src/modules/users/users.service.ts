@@ -9,47 +9,99 @@ import { UserRole } from '@prisma/client';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  /** Super Admin: tất cả. Teacher: bản thân + học viên. */
+  /** Xóa tài khoản học thử đã hết hạn (isTrial = true và trialExpiresAt < now). Gọi trước khi list. */
+  async cleanupExpiredTrialUsers(): Promise<number> {
+    const result = await this.prisma.user.deleteMany({
+      where: {
+        isTrial: true,
+        trialExpiresAt: { not: null, lt: new Date() },
+      },
+    });
+    return result.count;
+  }
+
+  /** Super Admin: tất cả. Teacher: bản thân + chỉ học viên thuộc lớp mình dạy. accountType: official | trial để lọc. Cleanup trial hết hạn chạy ở auth login, không chạy mỗi lần list. */
   async findAll(
-    params: { page?: number; limit?: number; role?: UserRole } = {},
+    params: { page?: number; limit?: number; role?: UserRole; accountType?: 'all' | 'official' | 'trial' } = {},
     requesterId: string,
     requesterRole: UserRole,
   ) {
-    const { page = 1, limit = 50, role } = params;
+    const { page = 1, limit = 50, role, accountType = 'all' } = params;
     const where: Record<string, unknown> = {};
     if (requesterRole === 'TEACHER') {
-      where.OR = [{ id: requesterId }, { role: 'STUDENT' }];
+      where.OR = [
+        { id: requesterId },
+        {
+          role: 'STUDENT',
+          classMemberships: {
+            some: { class: { teacherId: requesterId } },
+          },
+        },
+      ];
     }
     if (role) where.role = role;
-    const userSelect = {
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      phone: true,
-      role: true,
-      status: true,
-      emailVerified: true,
-      createdAt: true,
-      updatedAt: true,
-      title: true,
-      bio: true,
-      avatar: true,
-      specializations: true,
-      yearsExperience: true,
-      teacherPublic: true,
-      teacherOrderIndex: true,
-    };
-    const [items, total] = await Promise.all([
+    if (accountType === 'official') where.isTrial = false;
+    if (accountType === 'trial') where.isTrial = true;
+
+    const [rawItems, total] = await Promise.all([
       this.prisma.user.findMany({
-        where: where as { role?: UserRole; OR?: { id: string; role: UserRole }[] },
-        select: userSelect,
+        where: where as any,
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+          status: true,
+          emailVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          isTrial: true,
+          trialExpiresAt: true,
+          title: true,
+          bio: true,
+          avatar: true,
+          specializations: true,
+          yearsExperience: true,
+          teacherPublic: true,
+          teacherOrderIndex: true,
+          classMemberships: {
+            include: { class: { select: { id: true, name: true, status: true } } },
+          },
+          taughtClasses: {
+            select: { id: true, name: true, status: true },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.user.count({ where }),
+      this.prisma.user.count({ where: where as any }),
     ]);
+
+    const items = rawItems.map((u) => {
+      const { classMemberships, taughtClasses, ...rest } = u as any;
+      if (u.role === 'STUDENT' && classMemberships?.length) {
+        const currentClasses = classMemberships
+          .filter((m: { class: { status: string } }) => m.class.status === 'OPEN')
+          .map((m: { class: { id: string; name: string; status: string } }) => m.class);
+        const pastClasses = classMemberships
+          .filter((m: { class: { status: string } }) => m.class.status === 'CLOSED')
+          .map((m: { class: { id: string; name: string; status: string } }) => m.class);
+        return { ...rest, currentClasses, pastClasses };
+      }
+      if (u.role === 'TEACHER' && taughtClasses?.length) {
+        const classesTeachingCurrent = taughtClasses.filter((c: { status: string }) => c.status === 'OPEN');
+        const classesTeachingPast = taughtClasses.filter((c: { status: string }) => c.status === 'CLOSED');
+        return { ...rest, classesTeachingCurrent, classesTeachingPast };
+      }
+      return {
+        ...rest,
+        ...(u.role === 'STUDENT' && { currentClasses: [], pastClasses: [] }),
+        ...(u.role === 'TEACHER' && { classesTeachingCurrent: [], classesTeachingPast: [] }),
+      };
+    });
     return { items, total, page, limit };
   }
 
@@ -81,7 +133,7 @@ export class UsersService {
     return user;
   }
 
-  /** CRM/Web: xem chi tiết theo quyền; nếu là học viên thì kèm enrollments, progress %, quiz attempts. */
+  /** CRM/Web: xem chi tiết theo quyền. Teacher chỉ xem được học viên thuộc lớp mình dạy. Học viên: kèm lớp đang học / từng học; Giảng viên: kèm lớp đang dạy / từng dạy. */
   async findOneWithDetail(id: string, requesterId: string, requesterRole: UserRole) {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -108,13 +160,39 @@ export class UsersService {
       },
     });
     if (!user) throw new NotFoundException('Tài khoản không tồn tại');
-    if (requesterRole === 'TEACHER' && user.id !== requesterId && user.role !== 'STUDENT') {
-      throw new ForbiddenException('Bạn chỉ được xem bản thân và học viên.');
+    if (requesterRole === 'TEACHER' && user.id !== requesterId) {
+      if (user.role !== 'STUDENT') {
+        throw new ForbiddenException('Bạn chỉ được xem bản thân và học viên thuộc lớp mình.');
+      }
+      const inMyClass = await this.prisma.classMembership.findFirst({
+        where: { userId: id, class: { teacherId: requesterId } },
+      });
+      if (!inMyClass) {
+        throw new ForbiddenException('Bạn chỉ được xem học viên thuộc lớp mình phụ trách.');
+      }
     }
     const result: Record<string, unknown> = { ...user };
     if (user.role === 'STUDENT') {
       result.enrollments = await this.getStudentEnrollments(user.id);
       result.quizAttempts = await this.getStudentQuizAttempts(user.id);
+      const memberships = await this.prisma.classMembership.findMany({
+        where: { userId: user.id },
+        include: { class: { select: { id: true, name: true, status: true, closedAt: true } } },
+      });
+      result.classesCurrent = memberships
+        .filter((m) => m.class.status === 'OPEN')
+        .map((m) => ({ id: m.class.id, name: m.class.name, status: m.class.status }));
+      result.classesPast = memberships
+        .filter((m) => m.class.status === 'CLOSED')
+        .map((m) => ({ id: m.class.id, name: m.class.name, status: m.class.status, closedAt: m.class.closedAt }));
+    }
+    if (user.role === 'TEACHER') {
+      const taught = await this.prisma.class.findMany({
+        where: { teacherId: user.id },
+        select: { id: true, name: true, status: true, closedAt: true },
+      });
+      result.classesTeachingCurrent = taught.filter((c) => c.status === 'OPEN').map((c) => ({ id: c.id, name: c.name, status: c.status }));
+      result.classesTeachingPast = taught.filter((c) => c.status === 'CLOSED').map((c) => ({ id: c.id, name: c.name, status: c.status, closedAt: c.closedAt }));
     }
     return result;
   }

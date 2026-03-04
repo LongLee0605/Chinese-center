@@ -19,6 +19,9 @@ const Mail = lazy(() => import('./pages/Mail'));
 const LeadsList = lazy(() => import('./pages/leads/LeadsList'));
 const LeadDetail = lazy(() => import('./pages/leads/LeadDetail'));
 const TrialRegistrationsList = lazy(() => import('./pages/trial-registrations/TrialRegistrationsList'));
+const ClassesList = lazy(() => import('./pages/classes/ClassesList'));
+const ClassForm = lazy(() => import('./pages/classes/ClassForm'));
+const ClassDetail = lazy(() => import('./pages/classes/ClassDetail'));
 const AccountsList = lazy(() => import('./pages/accounts/AccountsList'));
 const AccountForm = lazy(() => import('./pages/accounts/AccountForm'));
 const AccountDetail = lazy(() => import('./pages/accounts/AccountDetail'));
@@ -87,6 +90,10 @@ export default function App() {
               <Route path="leads" element={<LeadsList />} />
               <Route path="leads/:id" element={<LeadDetail />} />
               <Route path="trial-registrations" element={<TrialRegistrationsList />} />
+              <Route path="classes" element={<ClassesList />} />
+              <Route path="classes/new" element={<ClassForm />} />
+              <Route path="classes/:id/edit" element={<ClassForm />} />
+              <Route path="classes/:id" element={<ClassDetail />} />
               <Route path="accounts" element={<AccountsList />} />
               <Route path="accounts/new" element={<AccountForm />} />
               <Route path="accounts/:id/edit" element={<AccountForm />} />

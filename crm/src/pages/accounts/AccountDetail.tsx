@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usersApi, type UserAccount, type UserRole } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowLeft, Pencil, BookOpen, ClipboardList, User, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Pencil, BookOpen, ClipboardList, User, Mail, Phone, GraduationCap, Clock } from 'lucide-react';
 import { avatarUrl } from '../../api/client';
 
 const ROLE_LABEL: Record<UserRole, string> = {
@@ -44,9 +44,15 @@ type QuizAttemptItem = {
   submittedAt: string | null;
 };
 
+type ClassItem = { id: string; name: string; status: string; closedAt?: string };
+
 type UserDetail = UserAccount & {
   enrollments?: Enrollment[];
   quizAttempts?: QuizAttemptItem[];
+  classesCurrent?: ClassItem[];
+  classesPast?: ClassItem[];
+  classesTeachingCurrent?: ClassItem[];
+  classesTeachingPast?: ClassItem[];
 };
 
 export default function AccountDetail() {
@@ -77,8 +83,13 @@ export default function AccountDetail() {
     );
   }
 
-  const enrollments = (user as UserDetail).enrollments ?? [];
-  const quizAttempts = (user as UserDetail).quizAttempts ?? [];
+  const detail = user as UserDetail;
+  const enrollments = detail.enrollments ?? [];
+  const quizAttempts = detail.quizAttempts ?? [];
+  const classesCurrent = detail.classesCurrent ?? [];
+  const classesPast = detail.classesPast ?? [];
+  const classesTeachingCurrent = detail.classesTeachingCurrent ?? [];
+  const classesTeachingPast = detail.classesTeachingPast ?? [];
   const isStudent = user.role === 'STUDENT';
   const isTeacher = user.role === 'TEACHER';
   const teacherUser = user as UserDetail & { title?: string; bio?: string; avatar?: string; specializations?: string[]; yearsExperience?: number; teacherPublic?: boolean; teacherOrderIndex?: number };
@@ -135,6 +146,17 @@ export default function AccountDetail() {
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium ${statusStyle}`}>
                   {STATUS_LABEL[user.status] ?? user.status}
                 </span>
+                {user.isTrial && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 text-sm font-medium">
+                    <Clock size={14} />
+                    Tạm thời
+                    {user.trialExpiresAt && (
+                      <span className="opacity-90">
+                        (hết hạn {new Date(user.trialExpiresAt).toLocaleString('vi-VN')})
+                      </span>
+                    )}
+                  </span>
+                )}
               </div>
               <div className="mt-4 space-y-1.5 text-sm">
                 <a
@@ -160,6 +182,39 @@ export default function AccountDetail() {
             </div>
           </div>
 
+          {isTeacher && (classesTeachingCurrent.length > 0 || classesTeachingPast.length > 0) && (
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Lớp đang dạy</p>
+              {classesTeachingCurrent.length === 0 ? (
+                <p className="text-sm text-slate-500">Không có</p>
+              ) : (
+                <ul className="flex flex-wrap gap-2">
+                  {classesTeachingCurrent.map((c) => (
+                    <li key={c.id}>
+                      <Link to={`/classes/${c.id}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-sm hover:bg-slate-200">
+                        <GraduationCap size={14} /> {c.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {classesTeachingPast.length > 0 && (
+                <>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-4 mb-2">Lớp từng dạy</p>
+                  <ul className="flex flex-wrap gap-2">
+                    {classesTeachingPast.map((c) => (
+                      <li key={c.id}>
+                        <Link to={`/classes/${c.id}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-sm border border-slate-100">
+                          <GraduationCap size={14} /> {c.name}
+                          {c.closedAt && <span className="text-xs text-slate-400">(đóng {new Date(c.closedAt).toLocaleDateString('vi-VN')})</span>}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
           {isTeacher && (teacherUser.title || teacherUser.bio || teacherUser.avatar) && (
             <div className="mt-6 pt-6 border-t border-slate-100">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Thông tin đội ngũ (website)</p>
@@ -190,6 +245,45 @@ export default function AccountDetail() {
 
       {isStudent && (
         <>
+          {(classesCurrent.length > 0 || classesPast.length > 0) && (
+            <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+              <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                <GraduationCap size={20} className="text-slate-600 shrink-0" />
+                <h2 className="text-lg font-semibold text-slate-900">Lớp học</h2>
+              </div>
+              <div className="crm-card-padding">
+                {classesCurrent.length > 0 && (
+                  <>
+                    <p className="text-sm font-medium text-slate-700 mb-2">Lớp đang học</p>
+                    <ul className="flex flex-wrap gap-2 mb-4">
+                      {classesCurrent.map((c) => (
+                        <li key={c.id}>
+                          <Link to={`/classes/${c.id}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-sm hover:bg-emerald-100">
+                            <GraduationCap size={14} /> {c.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {classesPast.length > 0 && (
+                  <>
+                    <p className="text-sm font-medium text-slate-700 mb-2">Lớp từng học</p>
+                    <ul className="flex flex-wrap gap-2">
+                      {classesPast.map((c) => (
+                        <li key={c.id}>
+                          <Link to={`/classes/${c.id}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-sm border border-slate-100">
+                            <GraduationCap size={14} /> {c.name}
+                            {c.closedAt && <span className="text-xs text-slate-400">(đóng {new Date(c.closedAt).toLocaleDateString('vi-VN')})</span>}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </section>
+          )}
           <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
             <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-3">
               <BookOpen size={20} className="text-slate-600 shrink-0" />

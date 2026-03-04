@@ -105,6 +105,7 @@ Kiểm tra container chạy: `docker ps` — thấy container `chinese-center-db
    - `JWT_SECRET` — giữ hoặc đổi chuỗi bất kỳ
    - `PORT=4000`
    - `CORS_ORIGINS="http://localhost:5173,http://localhost:5174"`
+   - **Đăng ký lớp:** Không gửi mail khi có đăng ký mới. Quản lý trong CRM → Chi tiết lớp → mục **Người đăng ký (chưa có tài khoản)**. Khi duyệt, backend gửi 1 mail cho người đăng ký (tên, email, SĐT, lớp, lịch, giảng viên, phòng, link lịch học). Cần cấu hình SMTP (và `WEBSITE_URL` cho link lịch học).
 
 ---
 
