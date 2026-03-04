@@ -21,27 +21,12 @@ function getNav(role: string): NavItem[] {
   ];
   if (hasStaff) {
     return [
-      { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
+      items[0],
       { to: '/accounts', label: 'Tài khoản', icon: UserCog },
-      { to: '/classes', label: 'Lớp học', icon: GraduationCap, section: 'Học offline' },
-      { to: '/courses', label: 'Khóa học', icon: BookOpen, section: 'Học online' },
-      { to: '/quizzes', label: 'Bài test', icon: ClipboardList, section: 'Học online' },
-      { to: '/trial-registrations', label: 'Đăng ký học thử', icon: UserPlus, section: 'Học online' },
-      { to: '/posts', label: 'Bài viết', icon: FileText },
-      { to: '/leads', label: 'Email đăng ký', icon: Inbox },
-      { to: '/mail', label: 'Gửi email', icon: Mail },
+      ...items.slice(1),
     ];
   }
-  return [
-    { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
-    { to: '/classes', label: 'Lớp học', icon: GraduationCap, section: 'Học offline' },
-    { to: '/courses', label: 'Khóa học', icon: BookOpen, section: 'Học online' },
-    { to: '/quizzes', label: 'Bài test', icon: ClipboardList, section: 'Học online' },
-    { to: '/trial-registrations', label: 'Đăng ký học thử', icon: UserPlus, section: 'Học online' },
-    { to: '/posts', label: 'Bài viết', icon: FileText },
-    { to: '/leads', label: 'Email đăng ký', icon: Inbox },
-    { to: '/mail', label: 'Gửi email', icon: Mail },
-  ];
+  return items;
 }
 
 function getInitials(firstName?: string, lastName?: string): string {

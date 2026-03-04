@@ -53,8 +53,6 @@ type CalendarEvent = {
 
 function buildCalendarEvents(classes: ScheduleClassItem[]): CalendarEvent[] {
   const events: CalendarEvent[] = [];
-  const startBound = CALENDAR_START_HOUR * 60;
-  const endBound = CALENDAR_END_HOUR * 60;
 
   for (const c of classes) {
     const startMin = timeToMinutes(c.scheduleStartTime);
